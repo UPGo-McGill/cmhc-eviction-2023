@@ -222,8 +222,23 @@ transcripts |>
   summarize(court_n = sum(court),
             court_pct = court_n / n())
 
+transcripts |> 
+  filter(category == "LA") |> 
+  group_by(transcript) |> 
+  count(code) |> 
+  ungroup() |> 
+  count(code) |> 
+  mutate(pct_total = n / sum(n)) |> 
+  group_by(no = str_detect(code, "-No")) |> 
+  mutate(pct_group = n / sum(n)) |> 
+  ungroup()
 
-# Details of eviction process ---------------------------------------------
+transcripts |> 
+  filter(code == "LA-S") |> 
+  count(province)
+
+
+# Landlord type -----------------------------------------------------------
 
 # Landlord type
 transcripts |> 
@@ -238,8 +253,87 @@ transcripts |>
     owned_other = sum(code == "LT-RP") >= 1) |> 
   group_by(owned_other) |> 
   summarize(across(c(individual:non_profit), sum)) |> 
-  mutate(across(individual:non_profit, \(x) x / sum(individual, corporate, public, non_profit), 
+  mutate(across(individual:non_profit, \(x) 
+                x / sum(individual, corporate, public, non_profit), 
                 .names = "{.col}_pct"))
+
+# Landlord type vs. eviction type
+transcripts |> 
+  arrange(transcript) |> 
+  group_by(transcript) |> 
+  summarize(
+    individual = sum(code == "LT-I") >= 1,
+    corporate = sum(code == "LT-C") >= 1,
+    public = sum(code == "LT-PH") >= 1,
+    non_profit = sum(code == "LT-NP") >= 1,
+    own_use = sum(code == "ET-OW") >= 1,
+    reno = sum(code == "ET-R") >= 1,
+    sale = sum(code == "ET-S") >= 1,
+    retal = sum(code == "ET-RT") >= 1,
+    other = sum(code == "ET-OL") >= 1) |> 
+  filter(individual | corporate) |> 
+  group_by(individual) |> 
+  summarize(across(c(own_use:other), mean))
+
+
+# Landlord type vs. eviction scale
+transcripts |> 
+  arrange(transcript) |> 
+  group_by(transcript) |> 
+  summarize(
+    individual = sum(code == "LT-I") >= 1,
+    corporate = sum(code == "LT-C") >= 1,
+    public = sum(code == "LT-PH") >= 1,
+    non_profit = sum(code == "LT-NP") >= 1,
+    multiple = sum(code == "ET-ME") >= 1) |> 
+  filter(individual | corporate) |> 
+  group_by(individual) |> 
+  summarize(across(c(multiple), mean))
+
+# Broader landlord perception
+transcripts |> 
+  filter(category == "BPL") |> 
+  arrange(transcript) |> 
+  group_by(transcript) |>
+  summarize(
+    indifferent = sum(code == "BPL-I") >= 1,
+    negative = sum(code == "BPL-N") >= 1,
+    positive = sum(code == "BPL-P") >= 1,
+    indif_only = sum(code == "BPL-I") >= 1 & 
+      sum(code %in% c("BPL-N", "BPL-P")) == 0,
+    neg_only = sum(code == "BPL-N") >= 1 & 
+      sum(code %in% c("BPL-I", "BPL-P")) == 0,
+    pos_only = sum(code == "BPL-P") >= 1 & 
+      sum(code %in% c("BPL-N", "BPL-I")) == 0,
+    mix = indifferent + negative + positive >= 2) |> 
+  summarize(across(c(indifferent:mix), mean))
+
+# Broader landlord action
+transcripts |> 
+  arrange(transcript) |> 
+  group_by(transcript) |>
+  summarize(
+    absent = sum(code == "BLA-A") >= 1,
+    control = sum(code == "BLA-C") >= 1,
+    disresp = sum(code == "BLA-D") >= 1,
+    harass = sum(code == "BLA-H") >= 1,
+    neutral = sum(code == "BLA-N") >= 1) |> 
+  summarize(across(c(absent:neutral), mean))
+
+
+# Landlord action following eviction notice -------------------------------
+
+transcripts |> 
+  arrange(transcript) |> 
+  group_by(transcript) |>
+  summarize(
+    harass = sum(code == "LAF-H") >= 1,
+    illegal = sum(code == "LAF-I") >= 1,
+    ghost = sum(code == "LAF-G") >= 1,
+    labour = sum(code == "LAF-TL") >= 1,
+    neutral = sum(code == "LAF-N") >= 1) |> 
+  summarize(any = mean(harass + illegal + ghost + labour >= 1),
+            across(c(harass:neutral), mean))
 
 
 
@@ -252,35 +346,3 @@ transcripts |>
   arrange(transcript) |> 
   count(code) |> 
   mutate(pct = n / sum(n))
-
-mob <- transcripts |> 
-  filter(category == "M") |> 
-  pull(transcript)
-
-transcripts |> 
-  filter(!transcript %in% mob) |> 
-  pull(transcript) |> 
-  unique()
-
-ud_t <- transcripts |> 
-  filter(category == "UD") |> 
-  filter(str_detect(code, "UD-T")) |> 
-  pull(transcript) |> 
-  unique()
-
-transcripts |> 
-  filter(!transcript %in% ud_t) |> 
-  pull(transcript) |> 
-  unique()
-
-et <- 
-  transcripts |> 
-  filter(category == "ET") |> 
-  filter(code %in% c("ET-CI", "ET-NC")) |> 
-  pull(transcript) |> 
-  unique()
-
-transcripts |> 
-  filter(!transcript %in% et) |> 
-  pull(transcript) |> 
-  unique()
