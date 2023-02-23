@@ -2,20 +2,24 @@
 
 source("R/02_code_checking.R")
 
-t_evict <- function(field_1, field_2) {
+t_evict <- function(...) {
   transcripts |> 
     filter(category == "ET") |> 
     arrange(transcript) |> 
-    filter(code %in% c("ET-OW", "ET-R", "ET-S", "ET-RT", "ET-OL")) |> 
-    reframe(
-      {{ field_1 }},
+    summarize(
+      province = first(province),
+      gender = first(gender),
+      race = first(race),
+      children = first(children),
+      pets = first(pets),
       own_use = sum(code == "ET-OW"),
       reno = sum(code == "ET-R"),
       sale = sum(code == "ET-S"),
       retal = sum(code == "ET-RT"),
       other = sum(code == "ET-OL"), .by = transcript) |> 
-    group_by({{ field_2 }}) |> 
-    reframe(across(c(own_use:other), \(x) scales::percent(mean(x), 0.1)))
+    group_by(...) |> 
+    summarize(across(c(own_use:other), \(x) {
+      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
 }
 
 
@@ -61,28 +65,14 @@ transcripts |>
   gt::gt()
 
 # Landlord factors
-transcripts |> 
-  filter(category == "ET") |> 
-  arrange(transcript) |> 
-  group_by(transcript) |> 
-  filter(code %in% c("ET-OW", "ET-R", "ET-S", "ET-RT", "ET-OL")) |> 
-  summarize(
-    own_use = sum(code == "ET-OW"),
-    reno = sum(code == "ET-R"),
-    sale = sum(code == "ET-S"),
-    retal = sum(code == "ET-RT"),
-    other = sum(code == "ET-OL")) |> 
-  summarize(across(c(own_use:other), \(x) scales::percent(mean(x), 0.1)))
-
-# Geographical differences
-t_evict(province, province)
-
-# Gender differences
-t_evict(gender, gender)
-  
-# Race differences
-t_evict(race, race)
-t_evict(race, race == "white")
+t_evict()
+t_evict(province)
+t_evict(gender)
+t_evict(race)
+t_evict(race == "white")
+t_evict(gender, race == "white")
+t_evict(children)
+t_evict(pets)
 
 # Single- or multiple-unit
 transcripts |> 

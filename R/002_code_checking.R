@@ -1,6 +1,6 @@
 #### 02 CODE CHECKING AND PROCESSING ###########################################
 
-source("R/01_code_import.R")
+source("R/001_code_import.R")
 
 
 # Missing province --------------------------------------------------------
@@ -74,3 +74,25 @@ transcripts <-
     race %in% c("Black", "Caribbean", "Haitian", "Nigerian") ~ "black",
     race %in% c("Mexican", "Spanish") ~ "hispanic",
     race %in% c("White/Caucasian", "Acadian") ~ "white"))
+
+
+# Process children --------------------------------------------------------
+
+snippets <- 
+  snippets |> 
+  mutate(children = children == "Yes")
+
+transcripts <- 
+  transcripts |> 
+  mutate(children = children == "Yes")
+
+
+# Process pets ------------------------------------------------------------
+
+snippets <- 
+  snippets |> 
+  mutate(pets = pets %in% c("Cat", "Dog", "Dog and cat"))
+
+transcripts <- 
+  transcripts |> 
+  mutate(pets = pets %in% c("Cat", "Dog", "Dog and cat"))
