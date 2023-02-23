@@ -1,219 +1,6 @@
-#### 02 CODE ANALYSIS ##########################################################
+#### 4. THE LANDLORD ###########################################################
 
-source("R/01_code_import.R")
-
-
-# Canadian population -----------------------------------------------------
-
-library(cancensus)
-
-# Provinces
-get_census("CA21", regions = list(C = 01), level = "PR") |> 
-  select(region = `Region Name`, population = Population) |> 
-  filter(str_detect(region, "New Brunswick|Quebec|Ontario|British Columbia")) |> 
-  mutate(pct = population / sum(population))
-
-# Age
-get_census("CA21", regions = list(C = 01), level = "PR", vectors = c(
-  age_18 = "v_CA21_83", age_19 = "v_CA21_86", age_20_24 = "v_CA21_89",
-  age_25_29 = "v_CA21_107", age_30_34 = "v_CA21_125", age_35_39 = "v_CA21_143",
-  age_40_44 = "v_CA21_161", age_45_49 = "v_CA21_179", age_50_54 = "v_CA21_197",
-  age_55_59 = "v_CA21_215", age_60_64 = "v_CA21_233", age_65 = "v_CA21_251")) |> 
-  select(region = `Region Name`, age_18:age_65) |> 
-  filter(str_detect(region, "New Brunswick|Quebec|Ontario|British Columbia")) |> 
-  summarize(across(c(-region), sum)) |> 
-  transmute(age_18_29 = age_18 + age_19 + age_20_24 + age_25_29,
-            age_30_49 = age_30_34 + age_35_39 + age_40_44 + age_45_49,
-            age_50_64 = age_50_54 + age_55_59 + age_60_64,
-            age_65) |> 
-  pivot_longer(everything(), names_to = "age", values_to = "n") |> 
-  mutate(pct = n / sum(n))
-  
-# Household size
-get_census("CA21", regions = list(C = 01), level = "PR", vectors = c(
-  size_1 = "v_CA21_444", size_2 = "v_CA21_445", size_3 = "v_CA21_446",
-  size_4 = "v_CA21_447", size_5 = "v_CA21_448")) |> 
-  select(region = `Region Name`, size_1:size_5) |> 
-  filter(str_detect(region, "New Brunswick|Quebec|Ontario|British Columbia")) |> 
-  summarize(across(c(-region), sum)) |> 
-  transmute(size_1, size_2 = size_2 * 2, size_3 = size_3 * 3, 
-            size_4 = size_4 * 4 + size_5 * 5) |> 
-  pivot_longer(everything(), names_to = "size", values_to = "n") |> 
-  mutate(pct = n / sum(n))
-
-# Gender
-get_census("CA21", regions = list(C = 01), level = "PR", vectors = c(
-  male = "v_CA21_9", female = "v_CA21_10")) |> 
-  select(region = `Region Name`, male, female) |> 
-  filter(str_detect(region, "New Brunswick|Quebec|Ontario|British Columbia")) |> 
-  summarize(across(c(-region), sum)) |> 
-  pivot_longer(everything(), names_to = "gender", values_to = "n") |> 
-  mutate(pct = n / sum(n))
-  
-# Race/ethnicity
-get_census("CA21", regions = list(C = 01), level = "PR", vectors = c(
-  not_vis = "v_CA21_4914", white = "v_CA21_4968", black = "v_CA21_4884", 
-  south_asian = "v_CA21_4878", chinese = "v_CA21_4881", 
-  filipino = "v_CA21_4887", arab = "v_CA21_4890", 
-  southeast_asian = "v_CA21_4896", west_asian = "v_CA21_4899", 
-  korean = "v_CA21_4902", japanese = "v_CA21_4905", latin = "v_CA21_4893",
-  indigenous = "v_CA21_4971")) |> 
-  select(region = `Region Name`, not_vis:latin) |> 
-  filter(str_detect(region, "New Brunswick|Quebec|Ontario|British Columbia")) |> 
-  summarize(across(c(-region), sum)) |> 
-  transmute(asian = south_asian + chinese + filipino + arab + southeast_asian +
-              west_asian + korean + japanese, black, indigenous, latin, 
-            white = not_vis + white) |> 
-  pivot_longer(everything(), names_to = "race", values_to = "n") |> 
-  mutate(pct = n / sum(n))
-  
-
-# Demographics ------------------------------------------------------------
-
-snippets |> 
-  group_by(transcript) |> 
-  slice(1) |> 
-  ungroup() |> 
-  count(province) |> 
-  mutate(pct = n / sum(n))
-
-snippets |> 
-  filter(is.na(province)) |> 
-  pull(transcript) |> 
-  unique()
-
-# Age
-snippets |> 
-  group_by(transcript) |> 
-  slice(1) |> 
-  ungroup() |> 
-  summarize(
-    age_18_29 = sum(age <= 29, na.rm = TRUE),
-    age_30_49 = sum(age >= 30 & age <= 49, na.rm = TRUE),
-    age_50_64 = sum(age >= 50 & age <= 64, na.rm = TRUE),
-    age_65 = sum(age >= 65, na.rm = TRUE)) |> 
-  pivot_longer(everything(), names_to = "age", values_to = "n") |> 
-  mutate(pct = n / sum(n))
-
-# HH size
-snippets |> 
-  group_by(transcript) |> 
-  slice(1) |> 
-  ungroup() |> 
-  summarize(
-    size_1 = sum(hh_size == 1, na.rm = TRUE),
-    size_2 = sum(hh_size == 2, na.rm = TRUE),
-    size_3 = sum(hh_size == 3, na.rm = TRUE),
-    size_4 = sum(hh_size >= 4, na.rm = TRUE)) |> 
-  pivot_longer(everything(), names_to = "size", values_to = "n") |> 
-  mutate(pct = n / sum(n))
-
-# Gender
-snippets |> 
-  group_by(transcript) |> 
-  slice(1) |> 
-  ungroup() |> 
-  summarize(
-    female = sum(gender == "Female", na.rm = TRUE),
-    male = sum(gender == "Male", na.rm = TRUE),
-    non_binary = sum(gender == "Nonbinary", na.rm = TRUE)) |> 
-  pivot_longer(everything(), names_to = "gender", values_to = "n") |> 
-  mutate(pct = n / sum(n))
-
-# Race/ethnicity
-snippets |> 
-  group_by(transcript) |> 
-  slice(1) |> 
-  ungroup() |> 
-  # count(race)
-  summarize(
-    asian = sum(race == "Asian", na.rm = TRUE),
-    mixed = sum(str_detect(race, "Biracial|Mixed"), na.rm = TRUE),
-    black = sum(race %in% c("Black", "Caribbean", "Haitian", "Nigerian"), 
-                na.rm = TRUE),
-    indigenous = sum(race == "Indigenous", na.rm = TRUE),
-    hispanic = sum(race %in% c("Mexican", "Spanish"), na.rm = TRUE),
-    white = sum(race %in% c("White/Caucasian", "Acadian"), na.rm = TRUE)) |> 
-  pivot_longer(everything(), names_to = "race", values_to = "n") |> 
-  mutate(pct = n / sum(n))
-
-# Disability
-snippets |> 
-  group_by(transcript) |> 
-  slice(1) |> 
-  ungroup() |>
-  summarize(
-    physical = sum(str_detect(physical, "Yes"), na.rm = TRUE),
-    intellectual = sum(str_detect(intellectual, "Yes"), na.rm = TRUE),
-    neither = n() - physical - intellectual) |> 
-  pivot_longer(everything(), names_to = "race", values_to = "n") |> 
-  mutate(pct = n / sum(n))
-
-
-# Eviction types ----------------------------------------------------------
-
-# Landlord or tenant factor, single or multiple
-transcripts |> 
-  filter(category == "ET") |> 
-  arrange(transcript) |> 
-  group_by(transcript) |> 
-  summarize(
-    tenant = sum(code %in% c("ET-NP", "ET-OT")) >= 1,
-    landlord = sum(code %in% c(
-      "ET-OW", "ET-R", "ET-S", "ET-RT", "ET-OL")) >= 1,
-    multiple = sum(code == "ET-ME") >= 1) |>
-  group_by(multiple) |> 
-  summarize(
-    tenant_n = sum(tenant & !landlord),
-    landlord_n = sum(!tenant & landlord),
-    both_n = sum(tenant & landlord)) |> 
-  mutate(
-    tenant_pct = tenant_n / sum(tenant_n, landlord_n, both_n),
-    landlord_pct = landlord_n / sum(tenant_n, landlord_n, both_n),
-    both_pct = both_n / sum(tenant_n, landlord_n, both_n))
-
-# Landlord factors
-transcripts |> 
-  filter(category == "ET") |> 
-  arrange(transcript) |> 
-  group_by(transcript) |> 
-  filter(code %in% c("ET-OW", "ET-R", "ET-S", "ET-RT", "ET-OL")) |> 
-  summarize(
-    own_use = sum(code == "ET-OW"),
-    reno = sum(code == "ET-R"),
-    sale = sum(code == "ET-S"),
-    retal = sum(code == "ET-RT"),
-    other = sum(code == "ET-OL")) |> 
-  summarize(across(c(own_use:other), mean))
-  
-# Geographical differences
-transcripts |> 
-  filter(category == "ET") |> 
-  arrange(transcript) |> 
-  group_by(transcript) |> 
-  filter(code %in% c("ET-OW", "ET-R", "ET-S", "ET-RT", "ET-OL")) |> 
-  summarize(
-    province,
-    own_use = sum(code == "ET-OW"),
-    reno = sum(code == "ET-R"),
-    sale = sum(code == "ET-S"),
-    retal = sum(code == "ET-RT"),
-    other = sum(code == "ET-OL"),
-    .groups = "drop") |> 
-  group_by(province) |> 
-  summarize(across(c(own_use:other), mean))
-
-# Own-use and multiple-unit
-transcripts |> 
-  filter(category == "ET") |> 
-  arrange(transcript) |> 
-  group_by(transcript) |> 
-  summarize(
-    own_use = sum(code == "ET-OW") >= 1,
-    multiple = sum(code == "ET-ME") >= 1) |>
-  count(own_use, multiple) |> 
-  filter(multiple) |> 
-  mutate(pct = n / sum(n))
+source("R/02_code_checking.R")
 
 
 # Landlord type -----------------------------------------------------------
@@ -439,7 +226,7 @@ transcripts |>
   summarize(any_neg_1 = sum(visits + court + new_apart + income + health +
                               positive + other >= 1),
             any_neg_2 = mean(visits + court + new_apart + income + health +
-                              positive + other >= 1),
+                               positive + other >= 1),
             across(c(visits:other), c(sum, mean)))
 
 
@@ -489,7 +276,7 @@ transcripts |>
     owner = sum(code == "UD-TO") >= 1,
     family = sum(code == "UD-FAM") >= 1) |> 
   filter(private + subsid + non_market + owner == 1) |> 
-summarize(across(c(private:family), c(sum, mean)))
+  summarize(across(c(private:family), c(sum, mean)))
 
 # Location
 transcripts |> 
@@ -505,7 +292,7 @@ transcripts |>
 
 # Interaction of factors --------------------------------------------------
 
-# Net sentiment table
+# Net outcome table
 transcripts |> 
   arrange(transcript) |> 
   group_by(transcript) |>
@@ -528,8 +315,8 @@ transcripts |>
   transmute(balance = tot_up - tot_down) |>
   count(balance) |> 
   mutate(pct = n / sum(n))
-  
-# Net sentiment figure
+
+# Net outcome figure
 fig_1 <- 
   transcripts |> 
   arrange(transcript) |> 
@@ -553,11 +340,11 @@ fig_1 <-
   transmute(balance = tot_up - tot_down) |>
   ggplot(aes(balance)) +
   geom_bar() +
-  scale_x_continuous(name = "Net housing sentiment after eviction",
+  scale_x_continuous(name = "Net housing outcome after eviction",
                      breaks = -4:4, minor_breaks = NULL) +
   scale_y_continuous(name = "Observations") +
   theme_minimal()
-  
+
 # Cost faceting figure
 fig_2 <- 
   transcripts |> 
@@ -589,9 +376,9 @@ fig_2 <-
   geom_violin() +
   geom_jitter(width = 0.1, height = 0.1) +
   scale_x_discrete(name = "Cost of post-eviction housing") +
-  scale_y_continuous(name = "Net housing sentiment after eviction") +
+  scale_y_continuous(name = "Net housing outcome after eviction") +
   theme_minimal()
-  
+
 # Cost faceting table
 transcripts |> 
   arrange(transcript) |> 
@@ -622,7 +409,7 @@ transcripts |>
             n_neg = sum(balance < 0),
             n_neut = sum(balance == 0),
             balance = mean(balance))
-  
+
 # Tenure faceting figure
 fig_3 <- 
   transcripts |> 
@@ -641,9 +428,10 @@ fig_3 <-
     loc_up = sum(code == "UD-L+") >= 1,
     loc_equal = sum(code == "UD-L=") >= 1,
     loc_down = sum(code == "UD-L-") >= 1,
-    tenure = case_when(sum(code == "UD-TP") >= 1 ~ "private",
-                       sum(code %in% c("UD-TNM", "UD-TS")) >= 1 ~ "non_market",
-                       sum(code == "UD-TO") >= 1 ~ "owner")) |> 
+    tenure = case_when(sum(code == "UD-TP") >= 1 ~ "Private rental",
+                       sum(code %in% c("UD-TNM", "UD-TS")) >= 1 ~ 
+                         "Non-market rental",
+                       sum(code == "UD-TO") >= 1 ~ "Ownership")) |> 
   mutate(tot_up = cost_down + qual_up + size_up + loc_up,
          tot_equal = qual_equal + size_equal + loc_equal,
          tot_down = cost_up + qual_down + size_down + loc_down,
@@ -653,7 +441,7 @@ fig_3 <-
   geom_violin() +
   geom_jitter(width = 0.1, height = 0.1) +
   scale_x_discrete(name = "Post-eviction tenure type") +
-  scale_y_continuous(name = "Net housing sentiment after eviction") +
+  scale_y_continuous(name = "Net housing outcome after eviction") +
   theme_minimal()
 
 # Tenure faceting table
@@ -673,16 +461,17 @@ transcripts |>
     loc_up = sum(code == "UD-L+") >= 1,
     loc_equal = sum(code == "UD-L=") >= 1,
     loc_down = sum(code == "UD-L-") >= 1,
-    tenure = case_when(sum(code == "UD-TP") >= 1 ~ "private",
-                       sum(code %in% c("UD-TNM", "UD-TS")) >= 1 ~ "non_market",
-                       sum(code == "UD-TO") >= 1 ~ "owner")) |> 
+    tenure = case_when(sum(code == "UD-TP") >= 1 ~ "Private rental",
+                       sum(code %in% c("UD-TNM", "UD-TS")) >= 1 ~ 
+                         "Non-market rental",
+                       sum(code == "UD-TO") >= 1 ~ "Ownership")) |> 
   mutate(tot_up = cost_down + qual_up + size_up + loc_up,
          tot_equal = qual_equal + size_equal + loc_equal,
          tot_down = cost_up + qual_down + size_down + loc_down,
          balance = tot_up - tot_down) |> 
   group_by(tenure) |> 
   summarize(balance = mean(balance))
-  
+
 # Gender faceting figure
 fig_4 <- 
   transcripts |> 
@@ -711,7 +500,7 @@ fig_4 <-
   geom_violin() +
   geom_jitter(width = 0.1, height = 0.1) +
   scale_x_discrete(name = "Gender") +
-  scale_y_continuous(name = "Net housing sentiment after eviction") +
+  scale_y_continuous(name = "Net housing outcome after eviction") +
   theme_minimal()
 
 # Gender faceting table
@@ -740,37 +529,6 @@ transcripts |>
   group_by(gender) |> 
   summarize(balance = mean(balance))
 
-# Race faceting figure
-# fig_4 <- 
-  transcripts |> 
-  arrange(transcript) |> 
-  group_by(transcript) |>
-  summarize(
-    cost_up = sum(code == "UD-C+") >= 1,
-    cost_equal = sum(code == "UD-C=") >= 1,
-    cost_down = sum(code == "UD-C-") >= 1,
-    qual_up = sum(code == "UD-Q+") >= 1,
-    qual_equal = sum(code == "UD-Q=") >= 1,
-    qual_down = sum(code == "UD-Q-") >= 1,
-    size_up = sum(code == "UD-S+") >= 1,
-    size_equal = sum(code == "UD-S=") >= 1,
-    size_down = sum(code == "UD-S-") >= 1,
-    loc_up = sum(code == "UD-L+") >= 1,
-    loc_equal = sum(code == "UD-L=") >= 1,
-    loc_down = sum(code == "UD-L-") >= 1,
-    white = first(race) == "White/Caucasian") |> 
-  mutate(tot_up = cost_down + qual_up + size_up + loc_up,
-         tot_equal = qual_equal + size_equal + loc_equal,
-         tot_down = cost_up + qual_down + size_down + loc_down,
-         balance = tot_up - tot_down) |> 
-  filter(!is.na(white)) |> 
-  ggplot(aes(white, balance)) +
-  geom_violin() +
-  geom_jitter(width = 0.1, height = 0.1) +
-  scale_x_discrete(name = "White") +
-  scale_y_continuous(name = "Net housing sentiment after eviction") +
-  theme_minimal()
-
 # Combined figure
 library(patchwork)
 
@@ -793,12 +551,14 @@ transcripts |>
     country = sum(code == "M-out") >= 1,
     other = sum(code == "M-O") >= 1,
     social_neg = sum(code == "EIL-SL") >= 1,
-    employ_neg = sum(code == "EIL-AE") >= 1) |> 
+    employ_neg = sum(code == "EIL-AE") >= 1,
+    isolat = sum(code == "E-I") >= 1,
+    lucky = sum(code == "E-PL") >= 1) |> 
   filter(stayed + nbhd + city + region + prov + country == 1) |> 
   # group_by(gender) |>
   # group_by(white) |>
   # group_by(social_neg) |> 
-  # group_by(stayed) |> 
+  group_by(stayed) |>
   summarize(any_1 = sum(nbhd + city + region + prov + country >= 1),
             any_2 = mean(nbhd + city + region + prov + country >= 1),
             across(where(is.logical), c(sum, mean)))
@@ -834,6 +594,70 @@ transcripts |>
     lucky = sum(code == "E-PL") >= 1) |> 
   # group_by(gender) |>
   # group_by(white) |>
-  # group_by(gender, white) |> 
+  # filter(!is.na(white)) |>
+  group_by(f_nw = gender == "Female" & !white) |>
+  summarize(across(where(is.logical), c(sum, mean)))
+
+# Luck by housing outcome/tenure
+transcripts |> 
+  arrange(transcript) |> 
+  group_by(transcript) |>
+  summarize(
+    gender = first(gender),
+    white = first(race) == "White/Caucasian",
+    cost_up = sum(code == "UD-C+") >= 1,
+    cost_equal = sum(code == "UD-C=") >= 1,
+    cost_down = sum(code == "UD-C-") >= 1,
+    qual_up = sum(code == "UD-Q+") >= 1,
+    qual_equal = sum(code == "UD-Q=") >= 1,
+    qual_down = sum(code == "UD-Q-") >= 1,
+    size_up = sum(code == "UD-S+") >= 1,
+    size_equal = sum(code == "UD-S=") >= 1,
+    size_down = sum(code == "UD-S-") >= 1,
+    loc_up = sum(code == "UD-L+") >= 1,
+    loc_equal = sum(code == "UD-L=") >= 1,
+    loc_down = sum(code == "UD-L-") >= 1,
+    lucky = sum(code == "E-PL") >= 1,
+    positive = sum(code == "EIL-PI") >= 1,
+    tenure = case_when(sum(code == "UD-TP") >= 1 ~ "Private rental",
+                       sum(code %in% c("UD-TNM", "UD-TS")) >= 1 ~ 
+                         "Non-market rental",
+                       sum(code == "UD-TO") >= 1 ~ "Ownership")) |> 
+  mutate(tot_up = cost_down + qual_up + size_up + loc_up,
+         tot_equal = qual_equal + size_equal + loc_equal,
+         tot_down = cost_up + qual_down + size_down + loc_down,
+         balance = tot_up - tot_down) |> 
+  group_by(bal = balance >= 0) |>
+  group_by(ten = tenure == "Non-market rental") |>
+  summarize(across(where(is.logical), c(sum, mean))) |> 
+  # select(bal, positive_1, positive_2, lucky_1, lucky_2)
+  select(ten, positive_1, positive_2, lucky_1, lucky_2)
+
+# Finding new accommodation
+transcripts |> 
+  group_by(transcript) |>
+  summarize(
+    gender = first(gender),
+    white = first(race) == "White/Caucasian",
+    difficulty = sum(code == "EIL-D") >= 1) |> 
+  # group_by(gender) |>
+  group_by(white) |>
+  # filter(!is.na(white)) |>
+  # group_by(f_nw = gender == "Female" & !white) |>
+  summarize(across(where(is.logical), c(sum, mean)))
+
+# Other impacts
+transcripts |> 
+  group_by(transcript) |>
+  summarize(
+    gender = first(gender),
+    white = first(race) == "White/Caucasian",
+    security = sum(code == "EIL-PS") >= 1,
+    health = sum(code == "EIL-H") >= 1,
+    positive = sum(code == "EIL-PI") >= 1) |> 
+  # group_by(gender) |>
+  # group_by(white) |>
+  # filter(!is.na(white)) |>
+  # group_by(f_nw = gender == "Female" & !white) |>
   summarize(across(where(is.logical), c(sum, mean)))
 

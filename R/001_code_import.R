@@ -94,7 +94,8 @@ snippet_cols <-
   max()
 
 snippet_base_col_names <- 
-  c("transcript", "snippet", "URL", "province", "city", "intellectual", 
+  c("transcript", "snippet", "URL", "memo", "lone_parent", "children", "pets",
+    "income_type", "income_on_rent", "province", "city", "intellectual", 
     "physical", "indigenous", "race", "gender", "hh_size", "age")
 
 snippet_col_names <- 
@@ -113,7 +114,8 @@ snippets <-
         all_of(paste0("code_", seq_len(
           snippet_cols - length(snippet_base_col_names)))))) |> 
       select(all_of(c(snippet_base_col_names, "codes")))}) |> 
-  bind_rows()
+  bind_rows() |> 
+  select(-memo)
 
 
 # Join descriptors to transcripts -----------------------------------------
@@ -127,8 +129,6 @@ transcripts <-
   right_join(transcripts, by = "transcript") |> 
   relocate(transcript, code, category, n) |> 
   arrange(transcript, category, code)
-
-
 
 
 # Clean up ----------------------------------------------------------------
