@@ -1,7 +1,5 @@
 #### 4. THE LANDLORD ###########################################################
 
-source("R/002_code_checking.R")
-
 t_lt <- 
   transcripts |> 
   filter(category == "LT") |> 
@@ -33,13 +31,13 @@ t_bpl <- function(...) {
         sum(code %in% c("BPL-I", "BPL-P")) == 0,
       pos_only = sum(code == "BPL-P") >= 1 & 
         sum(code %in% c("BPL-N", "BPL-I")) == 0,
-      mix = indifferent + negative + positive >= 2) |> 
+      mix = indif_only + neg_only + pos_only == 0) |> 
     group_by(...) |> 
     summarize(across(c(indifferent:mix), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
 }
 
-t_bla <- function(field = NULL) {
+t_bla <- function(...) {
   transcripts |> 
     arrange(transcript) |> 
     group_by(transcript) |>
@@ -54,12 +52,12 @@ t_bla <- function(field = NULL) {
       disresp = sum(code == "BLA-D") >= 1,
       harass = sum(code == "BLA-H") >= 1,
       neutral = sum(code == "BLA-N") >= 1) |> 
-    group_by({{ field }}) |> 
+    group_by(...) |> 
     summarize(across(c(absent:neutral), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
 }
 
-t_laf <- function(field = NULL) {
+t_laf <- function(...) {
   transcripts |> 
     arrange(transcript) |> 
     group_by(transcript) |>
@@ -75,7 +73,7 @@ t_laf <- function(field = NULL) {
       labour = sum(code == "LAF-TL") >= 1,
       neutral = sum(code == "LAF-N") >= 1,
       any = harass + illegal + ghost + labour >= 1) |> 
-    group_by({{ field }}) |> 
+    group_by(...) |> 
     summarize(across(c(harass:any), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
 }
@@ -106,9 +104,6 @@ t_lt |>
                     scales::percent(individual_pct + corporate_pct +
                                       public_pct + non_profit_pct, 0.1), ")"))
 
-
-mutate(across(individual:non_profit, \(x) paste0(x, " (", scales::percent(
-  x / sum(individual, corporate, public, non_profit), 0.1), ")"))) 
 
 # Landlord type vs. eviction type
 transcripts |> 

@@ -1,8 +1,5 @@
 #### 2. PARTICIPANT DEMOGRAPHICS ###############################################
 
-source("R/02_code_checking.R")
-
-
 # Canadian population -----------------------------------------------------
 
 library(cancensus)
@@ -104,7 +101,6 @@ snippets |>
                                      scales::percent(pct, 0.1), ")")) |> 
   gt::gt()
 
-
 # HH size
 snippets |> 
   group_by(transcript) |> 
@@ -131,7 +127,11 @@ snippets |>
     male = sum(gender == "Male", na.rm = TRUE),
     non_binary = sum(gender == "Nonbinary", na.rm = TRUE)) |> 
   pivot_longer(everything(), names_to = "gender", values_to = "n") |> 
-  mutate(pct = n / sum(n))
+  mutate(pct = n / sum(n)) |> 
+  transmute(gender, 
+            interviews = paste0(n, " (", scales::percent(pct, 0.1), ")")) |> 
+  gt::gt()
+
 
 # Race/ethnicity
 snippets |> 
@@ -139,7 +139,10 @@ snippets |>
   slice(1) |> 
   ungroup() |> 
   count(race) |> 
-  mutate(pct = n / sum(n))
+  mutate(pct = n / sum(n)) |> 
+  transmute(race, 
+            interviews = paste0(n, " (", scales::percent(pct, 0.1), ")")) |> 
+  gt::gt()
 
 # Disability
 snippets |> 
@@ -150,6 +153,9 @@ snippets |>
     physical = sum(str_detect(physical, "Yes"), na.rm = TRUE),
     intellectual = sum(str_detect(intellectual, "Yes"), na.rm = TRUE),
     neither = n() - physical - intellectual) |> 
-  pivot_longer(everything(), names_to = "race", values_to = "n") |> 
-  mutate(pct = n / sum(n))
+  pivot_longer(everything(), names_to = "disability", values_to = "n") |> 
+  mutate(pct = n / sum(n)) |> 
+  transmute(disability, 
+            interviews = paste0(n, " (", scales::percent(pct, 0.1), ")")) |> 
+  gt::gt()
 

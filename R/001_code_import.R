@@ -12,7 +12,7 @@ code_paths <-
 codes <-
   # Take the most recent file that matches
   code_paths[length(code_paths)] |> 
-  read_csv(show_col_types = FALSE) |> 
+  read_csv(show_col_types = FALSE, na = "") |> 
   select(code = `Code Name`,
          n = `Number of Snippets`,
          url = `Code URL`) |> 
@@ -31,7 +31,7 @@ crosstab_paths <-
 crosstabs <-
   # Take the most recent file that matches
   crosstab_paths[length(crosstab_paths)] |> 
-  read_csv(skip = 4, show_col_types = FALSE) |> 
+  read_csv(skip = 4, na = "", show_col_types = FALSE) |> 
   select(-1, -2) |> 
   rename(code_1 = "Code Name") |> 
   pivot_longer(cols = -code_1, names_to = "code_2", values_to = "n") |> 
@@ -47,7 +47,7 @@ descriptor_paths <-
 descriptors <-
   # Take the most recent file that matches
   descriptor_paths[length(descriptor_paths)] |> 
-  read_csv(skip = 4, show_col_types = FALSE) |> 
+  read_csv(skip = 4, na = "", show_col_types = FALSE) |> 
   select(-1, -2) |> 
   rename(code = "Code Name") |> 
   pivot_longer(cols = -code, names_to = "descriptor", values_to = "n") |> 
@@ -63,7 +63,7 @@ transcript_paths <-
 transcripts <-
   # Take the most recent file that matches
   transcript_paths[length(transcript_paths)] |> 
-  read_csv(skip = 4, show_col_types = FALSE) |> 
+  read_csv(skip = 4, na = "", show_col_types = FALSE) |> 
   select(-1, -2) |> 
   rename(code = "Code Name") |> 
   pivot_longer(cols = -code, names_to = "transcript", values_to = "n") |> 
@@ -79,7 +79,7 @@ snippet_paths <-
 
 snippet_probs <- 
   suppressWarnings(snippet_paths[length(snippet_paths)] |> 
-                     read_csv(show_col_types = FALSE))
+                     read_csv(na = "", show_col_types = FALSE))
 
 snippet_rows <- nrow(snippet_probs)
   
@@ -94,7 +94,7 @@ snippet_cols <-
   max()
 
 snippet_base_col_names <- 
-  c("transcript", "snippet", "URL", "memo", "lone_parent", "children", "pets",
+  c("transcript", "snippet", "URL", "memo", "children", "lone_parent", "pets",
     "income_type", "income_on_rent", "province", "city", "intellectual", 
     "physical", "indigenous", "race", "gender", "hh_size", "age")
 
@@ -105,10 +105,10 @@ snippet_col_names <-
 snippets <-
   map(seq_len(snippet_rows), \(x) {
     snippet_paths[length(snippet_paths)] |> 
-      read_csv(skip = x, n_max = 1, col_names = snippet_col_names,
-               col_types = paste0("ccccccccccdd", paste(
-                 rep("c", snippet_cols - length(snippet_base_col_names)), 
-                 collapse = "")),
+      read_csv(skip = x, n_max = 1, na = "", col_names = snippet_col_names,
+               col_types = paste0(paste(rep("c", 16), collapse = ""), "dd", 
+                                  paste(rep("c", snippet_cols - length(
+                                    snippet_base_col_names)), collapse = "")),
                show_col_types = FALSE) |> 
       mutate(codes = list(
         all_of(paste0("code_", seq_len(
@@ -126,14 +126,34 @@ transcripts <-
   slice(1) |> 
   ungroup() |> 
   select(-snippet, -URL) |> 
-  right_join(transcripts, by = "transcript") |> 
+  right_join(transcripts, by = "transcript", multiple = "all") |> 
   relocate(transcript, code, category, n) |> 
   arrange(transcript, category, code)
 
 
+# Coalesce `children` with old version of variable ------------------------
+
+old_children <- 
+  read_csv("data/old_children_codes.csv", show_col_types = FALSE) |> 
+  select(transcript = Transcript, old_children = `Children?`) |> 
+  distinct()
+
+snippets <- 
+  snippets |> 
+  left_join(old_children, by = "transcript") |> 
+  mutate(children = coalesce(children, old_children)) |> 
+  select(-old_children)
+
+transcripts <- 
+  transcripts |> 
+  left_join(old_children, by = "transcript") |> 
+  mutate(children = coalesce(children, old_children)) |> 
+  select(-old_children)
+
+
 # Clean up ----------------------------------------------------------------
 
-rm(code_paths, crosstab_paths, descriptor_paths, snippet_base_col_names,
-   snippet_col_names, snippet_cols, snippet_paths, snippet_probs, snippet_rows,
-   transcript_paths)
+rm(code_paths, crosstab_paths, descriptor_paths, old_children, 
+   snippet_base_col_names, snippet_col_names, snippet_cols, snippet_paths, 
+   snippet_probs, snippet_rows, transcript_paths)
   

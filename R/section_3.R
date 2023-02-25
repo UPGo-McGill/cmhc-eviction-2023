@@ -1,22 +1,18 @@
 #### 3. EVICTION TYPE ##########################################################
 
-source("R/02_code_checking.R")
-
 t_evict <- function(...) {
   transcripts |> 
-    filter(category == "ET") |> 
-    arrange(transcript) |> 
     summarize(
       province = first(province),
       gender = first(gender),
       race = first(race),
       children = first(children),
       pets = first(pets),
-      own_use = sum(code == "ET-OW"),
-      reno = sum(code == "ET-R"),
-      sale = sum(code == "ET-S"),
-      retal = sum(code == "ET-RT"),
-      other = sum(code == "ET-OL"), .by = transcript) |> 
+      own_use = sum(code == "ET-OW") > 0,
+      reno = sum(code == "ET-R") > 0,
+      sale = sum(code == "ET-S") > 0,
+      retal = sum(code == "ET-RT") > 0,
+      other = sum(code == "ET-OL") > 0, .by = transcript) |> 
     group_by(...) |> 
     summarize(across(c(own_use:other), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))

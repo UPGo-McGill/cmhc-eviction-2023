@@ -3,78 +3,166 @@
 source("R/001_code_import.R")
 
 
+# Count transcripts -------------------------------------------------------
+
+stopifnot(length(unique(snippets$transcript)) == 88L)
+
+
 # Missing province --------------------------------------------------------
 
-snippets |> 
-  filter(is.na(province)) |> 
-  pull(transcript) |> 
-  unique()
+stopifnot({
+  snippets |> 
+    filter(is.na(province)) |> 
+    pull(transcript) |> 
+    unique() |> 
+    length()
+  } == 0)
 
 
 # Missing age -------------------------------------------------------------
 
-snippets |> 
-  filter(is.na(age), !transcript %in% c("DJ_Aug3_MA*weak")) |> 
-  pull(transcript) |> 
-  unique()
+stopifnot({
+  snippets |> 
+    # These transcripts didn't have the question answered
+    filter(is.na(age), !transcript %in% c("DJ_Aug3_MA*weak", "TL_Aug24_BM")) |> 
+    pull(transcript) |> 
+    unique() |> 
+    length()
+  } == 0)
 
 
 # Missing HH size ---------------------------------------------------------
 
-snippets |> 
-  filter(is.na(hh_size)) |> 
-  pull(transcript) |> 
-  unique()
+stopifnot({
+  snippets |> 
+    filter(is.na(hh_size)) |> 
+    pull(transcript) |> 
+    unique() |> 
+    length() 
+  } == 0)
 
 
 # Missing gender ----------------------------------------------------------
 
-snippets |> 
-  filter(is.na(gender)) |> 
-  pull(transcript) |> 
-  unique()
+stopifnot({
+  snippets |> 
+    filter(is.na(gender)) |> 
+    pull(transcript) |> 
+    unique() |> 
+    length()
+  } == 0)
 
 
 # Missing race ------------------------------------------------------------
 
-snippets |> 
-  filter(is.na(race)) |> 
-  pull(transcript) |> 
-  unique()
+stopifnot({
+  snippets |> 
+    # These transcripts didn't have the question answered
+    filter(is.na(race), !transcript %in% c("TL_Aug24_BM")) |> 
+    pull(transcript) |> 
+    unique() |> 
+    length()
+  } == 0)
 
 
 # Missing indigenous ------------------------------------------------------
 
-snippets |> 
-  filter(is.na(indigenous)) |> 
-  pull(transcript) |> 
-  unique()
+stopifnot({
+  snippets |> 
+    # These transcripts didn't have the question answered
+    filter(is.na(indigenous), !transcript %in% c("TL_Aug24_BM")) |> 
+    pull(transcript) |> 
+    unique() |> 
+    length() 
+  } == 0)
+
+
+# Missing children --------------------------------------------------------
+
+stopifnot({
+  snippets |> 
+    filter(is.na(children)) |> 
+    pull(transcript) |> 
+    unique() |> 
+    length()
+  } == 0)
+
+
+# Missing lone-parent -----------------------------------------------------
+
+stopifnot({
+  snippets |> 
+    filter(is.na(lone_parent)) |> 
+    pull(transcript) |> 
+    unique()
+  } == character(0))
+
+
+# Missing pets ------------------------------------------------------------
+
+stopifnot({
+  snippets |> 
+    filter(is.na(pets)) |> 
+    pull(transcript) |> 
+    unique()
+  } == character(0))
+
+
+# Missing income ----------------------------------------------------------
+
+stopifnot({
+  snippets |> 
+    filter(is.na(income_on_rent), !transcript %in% c(
+      "SM_Jan30_CC", "PR_Jul29_CC", "PJ_Oct12_CC", "LSM_Aug2_CC")) |> 
+    pull(transcript) |> 
+    unique()
+  } == character(0))
+
+
+# Missing eviction type ---------------------------------------------------
+
+stopifnot({
+  transcripts |> 
+    summarize(ET = sum(category == "ET") > 0, .by = transcript) |> 
+    filter(!ET) |> 
+    pull(transcript)
+} == character(0))
 
 
 # Process race ------------------------------------------------------------
 
-snippets <- 
+snippets <-
   snippets |> 
   mutate(race = case_when(
-    indigenous == "Yes" ~ "indigenous",
-    race == "Asian" ~ "asian",
-    str_detect(race, "Biracial|Mixed") & !str_detect(race, "Indigenous") ~ 
-      "biracial",
-    race %in% c("Black", "Caribbean", "Haitian", "Nigerian") ~ "black",
-    race %in% c("Mexican", "Spanish") ~ "hispanic",
-    race %in% c("White/Caucasian", "Acadian") ~ "white"))
+    indigenous == "Yes" | str_detect(race, "Indigenous") ~ "indigenous",
+    race %in% c("Asian", "Biracial (Indian and Canadian)",
+                "European, Chinese, Japanese") ~ "asian",
+    race %in% c("Black", "Caribbean", "Haitian", "Nigerian", 
+                "Somalian/ Jamaican") ~ "black",
+    race %in% c("Mexican", "Spanish", "Biracial (White and Hispanic)") ~ 
+      "hispanic",
+    race %in% c("Visible minority", "Biracial (White and Egyptian)") ~ 
+      "other_vm",
+    race %in% c("White/Caucasian", "Acadian", "Biracial (White and Acadian)",
+                "Biracial (White and Italian)", "Biracial (White and Jewish)") ~ 
+      "white"))
 
 transcripts <- 
   transcripts |> 
   mutate(race = case_when(
-    indigenous == "Yes" ~ "indigenous",
-    race == "Asian" ~ "asian",
-    str_detect(race, "Biracial|Mixed") & !str_detect(race, "Indigenous") ~ 
-      "biracial",
-    race %in% c("Black", "Caribbean", "Haitian", "Nigerian") ~ "black",
-    race %in% c("Mexican", "Spanish") ~ "hispanic",
-    race %in% c("White/Caucasian", "Acadian") ~ "white"))
-
+    indigenous == "Yes" | str_detect(race, "Indigenous") ~ "indigenous",
+    race %in% c("Asian", "Biracial (Indian and Canadian)",
+                "European, Chinese, Japanese") ~ "asian",
+    race %in% c("Black", "Caribbean", "Haitian", "Nigerian", 
+                "Somalian/ Jamaican") ~ "black",
+    race %in% c("Mexican", "Spanish", "Biracial (White and Hispanic)") ~ 
+      "hispanic",
+    race %in% c("Visible minority", "Biracial (White and Egyptian)") ~ 
+      "other_vm",
+    race %in% c("White/Caucasian", "Acadian", "Biracial (White and Acadian)",
+                "Biracial (White and Italian)", "Biracial (White and Jewish)") ~ 
+      "white"))
+    
 
 # Process children --------------------------------------------------------
 
