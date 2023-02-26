@@ -94,8 +94,9 @@ stopifnot({
   snippets |> 
     filter(is.na(lone_parent)) |> 
     pull(transcript) |> 
-    unique()
-  } == character(0))
+    unique() |> 
+    length()
+  } == 0)
 
 
 # Missing pets ------------------------------------------------------------
@@ -104,8 +105,9 @@ stopifnot({
   snippets |> 
     filter(is.na(pets)) |> 
     pull(transcript) |> 
-    unique()
-  } == character(0))
+    unique() |> 
+    length()
+  } == 0)
 
 
 # Missing income ----------------------------------------------------------
@@ -115,8 +117,9 @@ stopifnot({
     filter(is.na(income_on_rent), !transcript %in% c(
       "SM_Jan30_CC", "PR_Jul29_CC", "PJ_Oct12_CC", "LSM_Aug2_CC")) |> 
     pull(transcript) |> 
-    unique()
-  } == character(0))
+    unique() |> 
+    length()
+  } == 0)
 
 
 # Missing eviction type ---------------------------------------------------
@@ -125,8 +128,20 @@ stopifnot({
   transcripts |> 
     summarize(ET = sum(category == "ET") > 0, .by = transcript) |> 
     filter(!ET) |> 
-    pull(transcript)
-} == character(0))
+    pull(transcript) |> 
+    length()
+} == 0)
+
+
+# Missing landlord type ---------------------------------------------------
+
+stopifnot({
+  transcripts |> 
+    summarize(LT = sum(category == "LT") > 0, .by = transcript) |> 
+    filter(!LT) |> 
+    pull(transcript) |> 
+    length()
+} == 0)
 
 
 # Process race ------------------------------------------------------------
@@ -184,3 +199,24 @@ snippets <-
 transcripts <- 
   transcripts |> 
   mutate(pets = pets %in% c("Cat", "Dog", "Dog and cat"))
+
+
+# Process income ----------------------------------------------------------
+
+snippets <- 
+  snippets |> 
+  mutate(income = case_when(
+    parse_number(income_on_rent) < 30 ~ "0 - 29",
+    parse_number(income_on_rent) < 49 ~ "30 - 49",
+    parse_number(income_on_rent) <= 100 ~ "50 - 100"), 
+    .after = income_on_rent) |> 
+  select(-income_on_rent)
+
+transcripts <- 
+  transcripts |> 
+  mutate(income = case_when(
+    parse_number(income_on_rent) < 30 ~ "0 - 29",
+    parse_number(income_on_rent) < 49 ~ "30 - 49",
+    parse_number(income_on_rent) <= 100 ~ "50 - 100"), 
+    .after = income_on_rent) |> 
+  select(-income_on_rent)

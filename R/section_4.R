@@ -3,7 +3,6 @@
 t_lt <- 
   transcripts |> 
   filter(category == "LT") |> 
-  arrange(transcript) |> 
   group_by(transcript) |>
   summarize(
     individual = sum(code == "LT-I") >= 1,
@@ -14,14 +13,13 @@ t_lt <-
 
 t_bpl <- function(...) {
   transcripts |> 
-    arrange(transcript) |> 
-    group_by(transcript) |>
     summarize(
       province = first(province),
       gender = first(gender),
       race = first(race),
       children = first(children),
       pets = first(pets),
+      income = first(income),
       indifferent = sum(code == "BPL-I") >= 1,
       negative = sum(code == "BPL-N") >= 1,
       positive = sum(code == "BPL-P") >= 1,
@@ -31,7 +29,7 @@ t_bpl <- function(...) {
         sum(code %in% c("BPL-I", "BPL-P")) == 0,
       pos_only = sum(code == "BPL-P") >= 1 & 
         sum(code %in% c("BPL-N", "BPL-I")) == 0,
-      mix = indif_only + neg_only + pos_only == 0) |> 
+      mix = indif_only + neg_only + pos_only == 0, .by = transcript) |> 
     group_by(...) |> 
     summarize(across(c(indifferent:mix), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
@@ -39,19 +37,18 @@ t_bpl <- function(...) {
 
 t_bla <- function(...) {
   transcripts |> 
-    arrange(transcript) |> 
-    group_by(transcript) |>
     summarize(
       province = first(province),
       gender = first(gender),
       race = first(race),
       children = first(children),
       pets = first(pets),
+      income = first(income),
       absent = sum(code == "BLA-A") >= 1,
       control = sum(code == "BLA-C") >= 1,
       disresp = sum(code == "BLA-D") >= 1,
       harass = sum(code == "BLA-H") >= 1,
-      neutral = sum(code == "BLA-N") >= 1) |> 
+      neutral = sum(code == "BLA-N") >= 1, .by = transcript) |> 
     group_by(...) |> 
     summarize(across(c(absent:neutral), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
@@ -59,20 +56,19 @@ t_bla <- function(...) {
 
 t_laf <- function(...) {
   transcripts |> 
-    arrange(transcript) |> 
-    group_by(transcript) |>
     summarize(
       province = first(province),
       gender = first(gender),
       race = first(race),
       children = first(children),
       pets = first(pets),
+      income = first(income),
       harass = sum(code == "LAF-H") >= 1,
       illegal = sum(code == "LAF-I") >= 1,
       ghost = sum(code == "LAF-G") >= 1,
       labour = sum(code == "LAF-TL") >= 1,
       neutral = sum(code == "LAF-N") >= 1,
-      any = harass + illegal + ghost + labour >= 1) |> 
+      any = harass + illegal + ghost + labour >= 1, .by = transcript) |> 
     group_by(...) |> 
     summarize(across(c(harass:any), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
@@ -101,8 +97,10 @@ t_lt |>
     `Public/non-profit` = paste0(public + non_profit, " (", scales::percent(
       public_pct + non_profit_pct, 0.1), ")"),
     Totals = paste0(individual + corporate + public + non_profit, " (", 
-                    scales::percent(individual_pct + corporate_pct +
-                                      public_pct + non_profit_pct, 0.1), ")"))
+                    scales::percent(individual_pct + corporate_pct + 
+                                      public_pct + non_profit_pct, 0.1), ")")
+    ) |> 
+  gt::gt()
 
 
 # Landlord type vs. eviction type
@@ -151,6 +149,7 @@ t_bpl(race == "white")
 t_bpl(gender, race == "white")
 t_bpl(children)
 t_bpl(pets)
+t_bpl(income)
 
 # Broader landlord action
 t_bla()
@@ -161,6 +160,7 @@ t_bla(race == "white")
 t_bla(gender, race == "white")
 t_bla(children)
 t_bla(pets)
+t_bla(income)
 
 # Landlord action following eviction notice
 t_laf()
@@ -171,3 +171,4 @@ t_laf(race == "white")
 t_laf(gender, race == "white")
 t_laf(children)
 t_laf(pets)
+t_bla(income)

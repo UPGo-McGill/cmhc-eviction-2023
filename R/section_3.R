@@ -8,6 +8,7 @@ t_evict <- function(...) {
       race = first(race),
       children = first(children),
       pets = first(pets),
+      income = first(income),
       own_use = sum(code == "ET-OW") > 0,
       reno = sum(code == "ET-R") > 0,
       sale = sum(code == "ET-S") > 0,
@@ -63,12 +64,14 @@ transcripts |>
 # Landlord factors
 t_evict()
 t_evict(province)
+t_evict(province, race == "white")
 t_evict(gender)
 t_evict(race)
 t_evict(race == "white")
 t_evict(gender, race == "white")
 t_evict(children)
 t_evict(pets)
+t_evict(income)
 
 # Single- or multiple-unit
 transcripts |> 
