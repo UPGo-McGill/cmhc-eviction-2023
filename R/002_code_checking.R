@@ -126,11 +126,12 @@ stopifnot({
 
 stopifnot({
   transcripts |> 
-    summarize(ET = sum(category == "ET") > 0, .by = transcript) |> 
+    summarize(ET = sum(code %in% c("ET-OW", "ET-R", "ET-S", "ET-NP", "ET-OT",
+                                   "ET-OL", "ET-RT")) > 0, .by = transcript) |> 
     filter(!ET) |> 
     pull(transcript) |> 
     length()
-} == 0)
+  } == 0)
 
 
 # Missing landlord type ---------------------------------------------------

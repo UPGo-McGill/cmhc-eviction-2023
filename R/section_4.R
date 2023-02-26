@@ -105,7 +105,6 @@ t_lt |>
 
 # Landlord type vs. eviction type
 transcripts |> 
-  arrange(transcript) |> 
   group_by(transcript) |> 
   summarize(
     individual = sum(code == "LT-I") >= 1,
@@ -124,7 +123,6 @@ transcripts |>
 
 # Landlord type vs. eviction scale
 transcripts |> 
-  arrange(transcript) |> 
   group_by(transcript) |> 
   summarize(
     individual = sum(code == "LT-I") >= 1,
@@ -162,6 +160,18 @@ t_bla(children)
 t_bla(pets)
 t_bla(income)
 
+transcripts |> 
+  summarize(
+    province = first(province),
+    absent = sum(code == "BLA-A") >= 1,
+    control = sum(code == "BLA-C") >= 1,
+    disresp = sum(code == "BLA-D") >= 1,
+    harass = sum(code == "BLA-H") >= 1,
+    neutral = sum(code == "BLA-N") >= 1, .by = transcript) |> 
+  group_by(nb = province == "New Brunswick") |> 
+  summarize(neg = sum(absent + control + disresp + harass + neutral > 0),
+            pct = mean(absent + control + disresp + harass + neutral > 0))
+  
 # Landlord action following eviction notice
 t_laf()
 t_laf(province)

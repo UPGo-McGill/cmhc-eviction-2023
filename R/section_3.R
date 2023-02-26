@@ -85,6 +85,18 @@ transcripts |>
   mutate(pct = n / sum(n)) |> 
   mutate(pct = scales::percent(pct, 0.1))
 
+# Renovation and multiple-unit
+transcripts |> 
+  filter(category == "ET") |> 
+  arrange(transcript) |> 
+  group_by(transcript) |> 
+  summarize(
+    reno = sum(code == "ET-R") >= 1,
+    multiple = sum(code == "ET-ME") >= 1) |>
+  count(reno, multiple) |> 
+  summarize(reno = paste0(sum(n[reno]), " (", scales::percent(
+    sum(n[reno]) / sum(n), 0.1), ")"), .by = multiple)
+  
 # Own-use and multiple-unit
 transcripts |> 
   filter(category == "ET") |> 
