@@ -55,6 +55,25 @@ t_su <- function(...) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
 }
 
+t_ss <- function(...) {
+  transcripts |> 
+    summarize(
+      province = first(province),
+      gender = first(gender),
+      race = first(race),
+      children = first(children),
+      pets = first(pets),
+      income = first(income),
+      family = sum(code == "SS-FM") >= 1,
+      friends = sum(code == "SS-Fr") >= 1,
+      social_media = sum(code == "SS-FM") >= 1,
+      money = sum(code == "SS-M") >= 1,
+      any = family + friends + social_media + money > 0, .by = transcript) |> 
+    group_by(...) |> 
+    summarize(across(c(family:any), \(x) {
+      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
+}
+
 
 # Court involvement -------------------------------------------------------
 
@@ -123,8 +142,45 @@ t_su(children)
 t_su(pets)
 t_su(income)
 
+# Figure 2
+transcripts |> 
+  summarize(
+    province = first(province),
+    gender = first(gender),
+    race = first(race),
+    children = first(children),
+    pets = first(pets),
+    income = first(income),
+    non_profit = sum(code == "Serv-HC") >= 1,
+    legal_paid = sum(code == "Serv-L") >= 1,
+    legal_free = sum(code == "Serv-F") >= 1,
+    gov = sum(code == "Serv-G") >= 1,
+    any = non_profit + legal_paid + legal_free + gov > 0, .by = transcript) |> 
+  group_by(income) |> 
+  summarize(across(c(non_profit:any), mean)) |> 
+  filter(!is.na(income)) |> 
+  pivot_longer(cols = -income) |> 
+  ggplot(aes(income, value)) +
+  geom_col() +
+  facet_wrap(~name)
+
+
+
+
 
 # Sources of support
+t_ss()
+t_ss(province)
+t_ss(gender)
+t_ss(race)
+t_ss(race == "white")
+t_ss(gender, race == "white")
+t_ss(children)
+t_ss(pets)
+t_ss(income)
+
+
+
 transcripts |> 
   arrange(transcript) |> 
   group_by(transcript) |>
