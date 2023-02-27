@@ -74,6 +74,54 @@ t_ss <- function(...) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
 }
 
+t_t <- function(...) {
+  transcripts |> 
+    summarize(
+      province = first(province),
+      gender = first(gender),
+      race = first(race),
+      children = first(children),
+      pets = first(pets),
+      income = first(income),
+      shelter = sum(code == "T-S") >= 1,
+      trans = sum(code == "T-TH") >= 1,
+      short_term = sum(code == "T-ST") >= 1,
+      car = sum(code == "T-C") >= 1,
+      street = sum(code == "T-Street") >= 1,
+      friends = sum(code == "T-Fr") >= 1,
+      family = sum(code == "T-F") >= 1,
+      other = sum(code == "T-O") >= 1, 
+      homeless = sum(shelter + car + street + friends) >= 1,
+      any = sum(shelter + trans + short_term + car + street + friends + family +
+                  other) >= 1, .by = transcript) |> 
+    group_by(...) |> 
+    summarize(across(c(shelter:any), \(x) {
+      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
+}
+
+t_cv <- function(...) {
+  transcripts |> 
+    summarize(
+      province = first(province),
+      gender = first(gender),
+      race = first(race),
+      children = first(children),
+      pets = first(pets),
+      income = first(income),
+      visits = sum(code == "CVD-V") >= 1,
+      court = sum(code == "CVD-C") >= 1,
+      new_apart = sum(code == "CVD-N") >= 1,
+      inc = sum(code == "CVD-I") >= 1,
+      health = sum(code == "CVD-H") >= 1,
+      positive = sum(code == "CVD-P") >= 1,
+      other = sum(code == "CVD-V") >= 1,
+      any_neg = sum(visits + court + new_apart + inc + health + other) >= 1, 
+      .by = transcript) |> 
+    group_by(...) |> 
+    summarize(across(c(visits:any_neg), \(x) {
+      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
+}
+
 
 # Court involvement -------------------------------------------------------
 
@@ -131,47 +179,25 @@ transcripts |>
 
 # Transition to stable housing --------------------------------------------
 
-transcripts |> 
-  arrange(transcript) |> 
-  group_by(transcript) |>
-  summarize(
-    gender = first(gender),
-    white = first(race) == "White/Caucasian",
-    shelter = sum(code == "T-S") >= 1,
-    trans = sum(code == "T-TH") >= 1,
-    short_term = sum(code == "T-ST") >= 1,
-    car = sum(code == "T-C") >= 1,
-    street = sum(code == "T-Street") >= 1,
-    friends = sum(code == "T-Fr") >= 1,
-    family = sum(code == "T-F") >= 1,
-    other = sum(code == "T-O") >= 1) |> 
-  # group_by(gender) |> 
-  group_by(white) |> 
-  summarize(any_1 = sum(shelter + trans + short_term + car + street +
-                          friends + family + other >= 1),
-            any_2 = mean(shelter + trans + short_term + car + street +
-                           friends + family + other >= 1),
-            homeless_1 = sum(shelter + trans + car + street + friends >= 1),
-            homeless_2 = mean(shelter + trans + car + street + friends >= 1),
-            across(c(shelter:other), c(sum, mean)))
+t_t()
+t_t(province)
+t_t(gender)
+t_t(race)
+t_t(race == "white")
+t_t(gender, race == "white")
+t_t(children)
+t_t(pets)
+t_t(income)
 
 
 # Covid -------------------------------------------------------------------
 
-transcripts |> 
-  arrange(transcript) |> 
-  group_by(transcript) |>
-  summarize(
-    visits = sum(code == "CVD-V") >= 1,
-    court = sum(code == "CVD-C") >= 1,
-    new_apart = sum(code == "CVD-N") >= 1,
-    income = sum(code == "CVD-I") >= 1,
-    health = sum(code == "CVD-H") >= 1,
-    positive = sum(code == "CVD-P") >= 1,
-    other = sum(code == "CVD-V") >= 1) |> 
-  summarize(any_neg_1 = sum(visits + court + new_apart + income + health +
-                              positive + other >= 1),
-            any_neg_2 = mean(visits + court + new_apart + income + health +
-                               positive + other >= 1),
-            across(c(visits:other), c(sum, mean)))
-
+t_cv()
+t_cv(province)
+t_cv(gender)
+t_cv(race)
+t_cv(race == "white")
+t_cv(gender, race == "white")
+t_cv(children)
+t_cv(pets)
+t_cv(income)
