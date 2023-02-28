@@ -1,34 +1,168 @@
 #### 8. IMPACTS OF EVICTION ####################################################
 
-# Impacts of eviction -----------------------------------------------------
+t_mb <- function(...) {
+  transcripts |> 
+    summarize(
+      province = first(province),
+      gender = first(gender),
+      race = first(race),
+      children = first(children),
+      pets = first(pets),
+      income = first(income),
+      stayed = sum(code == "M-S") >= 1,
+      nbhd = sum(code == "M-N") >= 1,
+      city = sum(code == "M-C") >= 1,
+      region = sum(code == "M-R") >= 1,
+      prov = sum(code == "M-P") >= 1,
+      country = sum(code == "M-out") >= 1,
+      other = sum(code == "M-O") >= 1, .by = transcript) |> 
+    group_by(...) |> 
+    summarize(across(c(stayed:other), \(x) {
+      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
+}
 
-# Mobility
-transcripts |> 
-  group_by(transcript) |>
+t_hc <- function(...) {
+  transcripts |> 
+    summarize(
+      province = first(province),
+      gender = first(gender),
+      race = first(race),
+      children = first(children),
+      pets = first(pets),
+      income = first(income),
+      change = sum(code == "HCC-Y") >= 1, 
+      no_change = sum(code == "HCC-N") >= 1, .by = transcript) |> 
+    group_by(...) |> 
+    summarize(across(c(change:no_change), \(x) {
+      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
+}
+
+t_ei <- function(...) {
+  transcripts |> 
+    summarize(
+      province = first(province),
+      gender = first(gender),
+      race = first(race),
+      children = first(children),
+      pets = first(pets),
+      income = first(income),
+      hope = sum(code == "E-H") >= 1,
+      frust = sum(code == "E-F") >= 1,
+      stress = sum(code == "E-S") >= 1,
+      anxiety = sum(code == "E-Ax") >= 1,
+      fear = sum(code == "E-FR") >= 1,
+      isolat = sum(code == "E-I") >= 1,
+      anger = sum(code == "E-An") >= 1,
+      sad = sum(code == "E-Sa") >= 1,
+      other = sum(code == "E-O") >= 1,
+      relief = sum(code == "E-R") >= 1,
+      lucky = sum(code == "E-PL") >= 1, 
+      any_neg = sum(hope + frust + stress + anxiety + fear + isolat + anger +
+                      sad + other) >= 1, .by = transcript) |> 
+    group_by(...) |> 
+    summarize(across(c(hope:any_neg), \(x) {
+      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
+}
+
+t_eil <- function(...) {
+  transcripts |> 
+    summarize(
+      province = first(province),
+      gender = first(gender),
+      race = first(race),
+      children = first(children),
+      pets = first(pets),
+      income = first(income),
+      difficulty = sum(code == "EIL-D") >= 1,
+      security = sum(code == "EIL-PS") >= 1,
+      health = sum(code == "EIL-H") >= 1,
+      positive = sum(code == "EIL-PI") >= 1, .by = transcript) |> 
+    group_by(...) |> 
+    summarize(across(c(difficulty:positive), \(x) {
+      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
+}
+
+
+# Mobility ----------------------------------------------------------------
+
+t_mb()
+t_mb(province)
+t_mb(gender)
+t_mb(race)
+t_mb(white = race == "white")
+t_mb(gender, white = race == "white")
+t_mb(children)
+t_mb(pets)
+t_mb(income)
+t_mb(high_stress = income == "50 - 100")
+
+
+# Figure 4
+figure_4 <- 
+  transcripts |> 
+  filter(category == "M") |> 
   summarize(
-    gender = first(gender),
-    white = first(race) == "White/Caucasian",
+    province = first(province),
     stayed = sum(code == "M-S") >= 1,
     nbhd = sum(code == "M-N") >= 1,
     city = sum(code == "M-C") >= 1,
     region = sum(code == "M-R") >= 1,
     prov = sum(code == "M-P") >= 1,
-    country = sum(code == "M-out") >= 1,
-    other = sum(code == "M-O") >= 1,
-    social_neg = sum(code == "EIL-SL") >= 1,
-    employ_neg = sum(code == "EIL-AE") >= 1,
-    isolat = sum(code == "E-I") >= 1,
-    lucky = sum(code == "E-PL") >= 1) |> 
-  filter(stayed + nbhd + city + region + prov + country == 1) |> 
-  # group_by(gender) |>
-  # group_by(white) |>
-  # group_by(social_neg) |> 
-  group_by(stayed) |>
-  summarize(any_1 = sum(nbhd + city + region + prov + country >= 1),
-            any_2 = mean(nbhd + city + region + prov + country >= 1),
-            across(where(is.logical), c(sum, mean)))
+    country = sum(code == "M-out") >= 1, .by = transcript) |> 
+  summarize(across(c(stayed:country), mean), .by = province) |> 
+  pivot_longer(-province) |> 
+  mutate(name = case_when(
+    name == "stayed" ~ "Stayed in nbhd.",
+    name == "nbhd" ~ "Neighbourhood",
+    name == "city" ~ "City",
+    name == "region" ~ "Region",
+    name == "prov" ~ "Province",
+    name == "country" ~ "Country")) |> 
+  mutate(name = factor(name, levels = rev(c(
+    "Stayed in nbhd.", "Neighbourhood", "City", "Region", "Province", 
+    "Country")))) |> 
+  ggplot(aes(province, value, fill = name)) +
+  geom_col() +
+  scale_x_discrete(name = NULL) +
+  scale_y_continuous(name = "% of respondents", labels = scales::percent) +
+  scale_fill_viridis_d(name = "Moved to different...", direction = -1) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
 
-# Household composition change
+ggsave("output/figure_4.png", figure_4, width = 7, height = 4, units = "in")
+
+# Loss of social life
+transcripts |> 
+  filter(sum(category == "M") >= 1, .by = transcript) |> 
+  summarize(
+    stayed = sum(code == "M-S") >= 1,
+    social = sum(code == "EIL-SL") >= 1, .by = transcript) |> 
+  group_by(stayed) |> 
+  summarize(across(where(is.logical), c(sum, mean)))
+
+# Loss of amenities
+transcripts |> 
+  filter(sum(category == "M") >= 1, .by = transcript) |> 
+  summarize(
+    stayed = sum(code == "M-S") >= 1,
+    amen = sum(code == "EIL-AE") >= 1, .by = transcript) |> 
+  group_by(stayed) |> 
+  summarize(across(where(is.logical), c(sum, mean)))
+
+
+# Household composition change --------------------------------------------
+
+t_hc()
+t_hc(province)
+t_hc(gender)
+t_hc(race)
+t_hc(white = race == "white")
+t_hc(gender, white = race == "white")
+t_hc(children)
+t_hc(pets)
+t_hc(income)
+t_hc(high_stress = income == "50 - 100")
+
 transcripts |> 
   group_by(transcript) |>
   summarize(
@@ -41,31 +175,32 @@ transcripts |>
   # group_by(white) |>
   summarize(across(where(is.logical), c(sum, mean)))
 
-# Emotional impact
+
+# Emotional impact --------------------------------------------------------
+
+t_ei()
+t_ei(province)
+t_ei(gender)
+t_ei(race)
+t_ei(white = race == "white")
+t_ei(f_nw = gender == "Female" & race != "white")
+t_ei(children)
+t_ei(pets)
+t_ei(income)
+t_ei(high_stress = income == "50 - 100")
+
+# Luck by mobility
 transcripts |> 
-  group_by(transcript) |>
   summarize(
-    gender = first(gender),
-    white = first(race) == "White/Caucasian",
-    hope = sum(code == "E-H") >= 1,
-    frust = sum(code == "E-F") >= 1,
-    stress = sum(code == "E-S") >= 1,
-    anxiety = sum(code == "E-Ax") >= 1,
-    fear = sum(code == "E-FR") >= 1,
-    isolat = sum(code == "E-I") >= 1,
-    anger = sum(code == "E-An") >= 1,
-    sad = sum(code == "E-Sa") >= 1,
-    relief = sum(code == "E-R") >= 1,
-    lucky = sum(code == "E-PL") >= 1) |> 
-  # group_by(gender) |>
-  # group_by(white) |>
-  # filter(!is.na(white)) |>
-  group_by(f_nw = gender == "Female" & !white) |>
-  summarize(across(where(is.logical), c(sum, mean)))
+    lucky = sum(code == "E-PL") >= 1,
+    stayed = sum(code == "M-S") >= 1,
+    .by = transcript) |> 
+  summarize(across(c(lucky), \(x) {
+    paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}),
+    .by = stayed)
 
 # Luck by housing outcome/tenure
 transcripts |> 
-  arrange(transcript) |> 
   group_by(transcript) |>
   summarize(
     gender = first(gender),
@@ -98,13 +233,30 @@ transcripts |>
   # select(bal, positive_1, positive_2, lucky_1, lucky_2)
   select(ten, positive_1, positive_2, lucky_1, lucky_2)
 
+
+t_eil()
+t_eil(province)
+t_eil(gender)
+t_eil(race)
+t_eil(white = race == "white")
+t_eil(f_nw = gender == "Female" & race != "white")
+t_eil(children)
+t_eil(pets)
+t_eil(income)
+t_eil(high_stress = income == "50 - 100")
+
+
 # Finding new accommodation
 transcripts |> 
   group_by(transcript) |>
   summarize(
     gender = first(gender),
     white = first(race) == "White/Caucasian",
-    difficulty = sum(code == "EIL-D") >= 1) |> 
+    difficulty = sum(code == "EIL-D") >= 1,
+    security = sum(code == "EIL-PS") >= 1,
+    health = sum(code == "EIL-H") >= 1,
+    positive = sum(code == "EIL-PI") >= 1) |> 
+  
   # group_by(gender) |>
   group_by(white) |>
   # filter(!is.na(white)) |>
