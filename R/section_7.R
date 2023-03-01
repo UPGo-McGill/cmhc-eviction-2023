@@ -3,12 +3,16 @@
 t_uc <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
+      non_market = sum(code %in% c("UD-TNM", "UD-TS")) > 0,
+      rental = sum(code == "UD-TP") > 0,
+      owner = sum(code == "UD-TO") > 0,
+      insecure = sum(code == "EIL-PS") > 0, 
+      tenure = case_when(
+        non_market ~ "non-market",
+        rental ~ "rental",
+        owner ~ "owner"),
       up = sum(code == "UD-C+") >= 1,
       equal = sum(code == "UD-C=") >= 1,
       down = sum(code == "UD-C-") >= 1, .by = transcript) |> 
@@ -21,12 +25,8 @@ t_uc <- function(...) {
 t_uq <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       up = sum(code == "UD-Q+") >= 1,
       equal = sum(code == "UD-Q=") >= 1,
       down = sum(code == "UD-Q-") >= 1, .by = transcript) |> 
@@ -39,12 +39,8 @@ t_uq <- function(...) {
 t_us <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       up = sum(code == "UD-S+") >= 1,
       equal = sum(code == "UD-S=") >= 1,
       down = sum(code == "UD-S-") >= 1, .by = transcript) |> 
@@ -57,12 +53,8 @@ t_us <- function(...) {
 t_ul <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       up = sum(code == "UD-L+") >= 1,
       equal = sum(code == "UD-L=") >= 1,
       down = sum(code == "UD-L-") >= 1, .by = transcript) |> 
@@ -75,12 +67,8 @@ t_ul <- function(...) {
 t_ut <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       private = sum(code == "UD-TP") >= 1,
       non_market = sum(code %in% c("UD-TS", "UD-TNM")) >= 1,
       owner = sum(code == "UD-TO") >= 1,
@@ -95,12 +83,8 @@ t_ut <- function(...) {
 t_ub <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       private = sum(code == "UD-TP") >= 1,
       non_market = sum(code %in% c("UD-TS", "UD-TNM")) >= 1,
       owner = sum(code == "UD-TO") >= 1,
@@ -139,7 +123,10 @@ t_uc(gender, white = race == "white")
 t_uc(children)
 t_uc(pets)
 t_uc(income)
+t_uc(disability)
 t_uc(high_stress = income == "50 - 100")
+t_uc(tenure)
+
 
 
 # Quality -----------------------------------------------------------------
@@ -153,6 +140,7 @@ t_uq(gender, white = race == "white")
 t_uq(children)
 t_uq(pets)
 t_uq(income)
+t_uq(disability)
 t_uq(high_stress = income == "50 - 100")
 
 
@@ -167,6 +155,7 @@ t_us(gender, white = race == "white")
 t_us(children)
 t_us(pets)
 t_us(income)
+t_us(disability)
 t_us(low_stress = income == "0 - 29")
 
 
@@ -181,6 +170,7 @@ t_ul(gender, white = race == "white")
 t_ul(children)
 t_ul(pets)
 t_ul(income)
+t_ul(disability)
 t_ul(low_stress = income == "0 - 29")
 
 
@@ -195,6 +185,7 @@ t_ut(gender, white = race == "white")
 t_ut(children)
 t_ut(pets)
 t_ut(income)
+t_ut(disability)
 
 
 # Interaction of factors --------------------------------------------------

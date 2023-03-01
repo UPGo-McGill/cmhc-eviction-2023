@@ -3,12 +3,8 @@
 t_ci <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       court = sum(code == "ET-CI") >= 1,
       non_court = sum(code == "ET-NC") >= 1, .by = transcript) |> 
     group_by(...) |> 
@@ -19,12 +15,8 @@ t_ci <- function(...) {
 t_la <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       court = sum(code == "LA-C") >= 1,
       settle = sum(code == "LA-S") >= 1,
       pess = sum(code == "LA-NoP") >= 1,
@@ -39,12 +31,8 @@ t_la <- function(...) {
 t_t <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       shelter = sum(code == "T-S") >= 1,
       trans = sum(code == "T-TH") >= 1,
       short_term = sum(code == "T-ST") >= 1,
@@ -64,12 +52,9 @@ t_t <- function(...) {
 t_cv <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
+      disability = first(disability),
       visits = sum(code == "CVD-V") >= 1,
       court = sum(code == "CVD-C") >= 1,
       new_apart = sum(code == "CVD-N") >= 1,
@@ -96,6 +81,7 @@ t_ci(gender, race == "white")
 t_ci(children)
 t_ci(pets)
 t_ci(income)
+t_ci(disability)
 
 transcripts |> 
   summarize(
@@ -122,6 +108,7 @@ t_la(gender, race == "white")
 t_la(children)
 t_la(pets)
 t_la(income)
+t_la(disability)
 
 transcripts |> 
   filter(category == "LA") |> 
@@ -150,6 +137,7 @@ t_t(gender, race == "white")
 t_t(children)
 t_t(pets)
 t_t(income)
+t_t(disability)
 
 
 # Covid -------------------------------------------------------------------
@@ -163,3 +151,4 @@ t_cv(gender, race == "white")
 t_cv(children)
 t_cv(pets)
 t_cv(income)
+t_cv(disability)

@@ -3,12 +3,8 @@
 t_mb <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       stayed = sum(code == "M-S") >= 1,
       nbhd = sum(code == "M-N") >= 1,
       city = sum(code == "M-C") >= 1,
@@ -24,12 +20,8 @@ t_mb <- function(...) {
 t_hc <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       change = sum(code == "HCC-Y") >= 1, 
       no_change = sum(code == "HCC-N") >= 1, .by = transcript) |> 
     group_by(...) |> 
@@ -40,12 +32,8 @@ t_hc <- function(...) {
 t_ei <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       hope = sum(code == "E-H") >= 1,
       frust = sum(code == "E-F") >= 1,
       stress = sum(code == "E-S") >= 1,
@@ -67,12 +55,8 @@ t_ei <- function(...) {
 t_eil <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       difficulty = sum(code == "EIL-D") >= 1,
       security = sum(code == "EIL-PS") >= 1,
       health = sum(code == "EIL-H") >= 1,
@@ -95,7 +79,7 @@ t_mb(children)
 t_mb(pets)
 t_mb(income)
 t_mb(high_stress = income == "50 - 100")
-
+t_mb(disability)
 
 # Figure 4
 figure_4 <- 
@@ -162,6 +146,7 @@ t_hc(children)
 t_hc(pets)
 t_hc(income)
 t_hc(high_stress = income == "50 - 100")
+t_hc(disability)
 
 transcripts |> 
   group_by(transcript) |>
@@ -188,6 +173,7 @@ t_ei(children)
 t_ei(pets)
 t_ei(income)
 t_ei(high_stress = income == "50 - 100")
+t_ei(disability)
 
 # Luck by mobility
 transcripts |> 
@@ -199,12 +185,12 @@ transcripts |>
     paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}),
     .by = stayed)
 
-# Luck by housing outcome/tenure
+# Luck/positive by housing outcome
 transcripts |> 
   group_by(transcript) |>
   summarize(
     gender = first(gender),
-    white = first(race) == "White/Caucasian",
+    white = first(race) == "white",
     cost_up = sum(code == "UD-C+") >= 1,
     cost_equal = sum(code == "UD-C=") >= 1,
     cost_down = sum(code == "UD-C-") >= 1,
@@ -228,11 +214,40 @@ transcripts |>
          tot_down = cost_up + qual_down + size_down + loc_down,
          balance = tot_up - tot_down) |> 
   group_by(bal = balance >= 0) |>
+  summarize(across(where(is.logical), c(sum, mean))) |> 
+  select(bal, positive_1, positive_2, lucky_1, lucky_2)
+
+# Luck/positive by tenure
+transcripts |> 
+  group_by(transcript) |>
+  summarize(
+    gender = first(gender),
+    white = first(race) == "white",
+    cost_up = sum(code == "UD-C+") >= 1,
+    cost_equal = sum(code == "UD-C=") >= 1,
+    cost_down = sum(code == "UD-C-") >= 1,
+    qual_up = sum(code == "UD-Q+") >= 1,
+    qual_equal = sum(code == "UD-Q=") >= 1,
+    qual_down = sum(code == "UD-Q-") >= 1,
+    size_up = sum(code == "UD-S+") >= 1,
+    size_equal = sum(code == "UD-S=") >= 1,
+    size_down = sum(code == "UD-S-") >= 1,
+    loc_up = sum(code == "UD-L+") >= 1,
+    loc_equal = sum(code == "UD-L=") >= 1,
+    loc_down = sum(code == "UD-L-") >= 1,
+    lucky = sum(code == "E-PL") >= 1,
+    positive = sum(code == "EIL-PI") >= 1,
+    tenure = case_when(sum(code == "UD-TP") >= 1 ~ "Private rental",
+                       sum(code %in% c("UD-TNM", "UD-TS")) >= 1 ~ 
+                         "Non-market rental",
+                       sum(code == "UD-TO") >= 1 ~ "Ownership")) |> 
+  mutate(tot_up = cost_down + qual_up + size_up + loc_up,
+         tot_equal = qual_equal + size_equal + loc_equal,
+         tot_down = cost_up + qual_down + size_down + loc_down,
+         balance = tot_up - tot_down) |> 
   group_by(ten = tenure == "Non-market rental") |>
   summarize(across(where(is.logical), c(sum, mean))) |> 
-  # select(bal, positive_1, positive_2, lucky_1, lucky_2)
   select(ten, positive_1, positive_2, lucky_1, lucky_2)
-
 
 t_eil()
 t_eil(province)
@@ -244,6 +259,7 @@ t_eil(children)
 t_eil(pets)
 t_eil(income)
 t_eil(high_stress = income == "50 - 100")
+t_eil(disability)
 
 
 # Finding new accommodation

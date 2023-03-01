@@ -20,6 +20,7 @@ t_bpl <- function(...) {
       children = first(children),
       pets = first(pets),
       income = first(income),
+      disability = first(disability),
       indifferent = sum(code == "BPL-I") >= 1,
       negative = sum(code == "BPL-N") >= 1,
       positive = sum(code == "BPL-P") >= 1,
@@ -44,13 +45,16 @@ t_bla <- function(...) {
       children = first(children),
       pets = first(pets),
       income = first(income),
+      disability = first(disability),
       absent = sum(code == "BLA-A") >= 1,
       control = sum(code == "BLA-C") >= 1,
       disresp = sum(code == "BLA-D") >= 1,
       harass = sum(code == "BLA-H") >= 1,
-      neutral = sum(code == "BLA-N") >= 1, .by = transcript) |> 
+      neutral = sum(code == "BLA-N") >= 1, 
+      neg = absent + control + disresp + harass >= 1,
+      .by = transcript) |> 
     group_by(...) |> 
-    summarize(across(c(absent:neutral), \(x) {
+    summarize(across(c(absent:neg), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
 }
 
@@ -63,6 +67,7 @@ t_laf <- function(...) {
       children = first(children),
       pets = first(pets),
       income = first(income),
+      disability = first(disability),
       harass = sum(code == "LAF-H") >= 1,
       illegal = sum(code == "LAF-I") >= 1,
       ghost = sum(code == "LAF-G") >= 1,
@@ -148,6 +153,7 @@ t_bpl(gender, race == "white")
 t_bpl(children)
 t_bpl(pets)
 t_bpl(income)
+t_bpl(disability)
 
 # Broader landlord action
 t_bla()
@@ -159,6 +165,7 @@ t_bla(gender, race == "white")
 t_bla(children)
 t_bla(pets)
 t_bla(income)
+t_bla(disability)
 
 transcripts |> 
   summarize(
@@ -181,4 +188,6 @@ t_laf(race == "white")
 t_laf(gender, race == "white")
 t_laf(children)
 t_laf(pets)
-t_bla(income)
+t_laf(income)
+t_laf(disability)
+

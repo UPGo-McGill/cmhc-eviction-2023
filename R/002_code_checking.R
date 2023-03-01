@@ -353,6 +353,40 @@ transcripts <-
   select(-income_on_rent)
 
 
+# Process disability ------------------------------------------------------
+
+snippets <-
+  snippets |> 
+  mutate(
+    intellectual = case_when(
+      intellectual == "Yes" ~ TRUE,
+      intellectual == "No" ~ FALSE,
+      .default = NA),
+    physical = case_when(
+      str_detect(physical, "Yes") ~ TRUE,
+      physical == "No" ~ FALSE,
+      .default = NA),
+    disability = intellectual + physical > 0) |> 
+  relocate(disability, .after = physical) |> 
+  select(-intellectual, -physical)
+    
+transcripts <-
+  transcripts |> 
+  mutate(
+    intellectual = case_when(
+      intellectual == "Yes" ~ TRUE,
+      intellectual == "No" ~ FALSE,
+      .default = NA),
+    physical = case_when(
+      str_detect(physical, "Yes") ~ TRUE,
+      physical == "No" ~ FALSE,
+      .default = NA),
+    disability = intellectual + physical > 0) |> 
+  relocate(disability, .after = physical) |> 
+  select(-intellectual, -physical)
+
+
+
 # Clean up ----------------------------------------------------------------
 
 rm(missing_province, missing_age, missing_hh_size, missing_gender, missing_race,

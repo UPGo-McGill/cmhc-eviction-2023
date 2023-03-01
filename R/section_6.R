@@ -3,12 +3,8 @@
 t_su <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       non_profit = sum(code == "Serv-HC") >= 1,
       legal_paid = sum(code == "Serv-L") >= 1,
       legal_free = sum(code == "Serv-F") >= 1,
@@ -22,12 +18,8 @@ t_su <- function(...) {
 t_ss <- function(...) {
   transcripts |> 
     summarize(
-      province = first(province),
-      gender = first(gender),
-      race = first(race),
-      children = first(children),
-      pets = first(pets),
-      income = first(income),
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
       family = sum(code == "SS-FM") >= 1,
       friends = sum(code == "SS-Fr") >= 1,
       social_media = sum(code == "SS-FM") >= 1,
@@ -50,6 +42,7 @@ t_su(gender, race == "white")
 t_su(children)
 t_su(pets)
 t_su(income)
+t_su(disability)
 
 # Figure 2
 figure_2 <- 
@@ -100,3 +93,4 @@ t_ss(children)
 t_ss(pets)
 t_ss(income)
 t_ss(income == "50 - 100")
+t_ss(disability)
