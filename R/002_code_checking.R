@@ -367,8 +367,7 @@ snippets <-
       physical == "No" ~ FALSE,
       .default = NA),
     disability = intellectual + physical > 0) |> 
-  relocate(disability, .after = physical) |> 
-  select(-intellectual, -physical)
+  relocate(disability, .after = physical)
     
 transcripts <-
   transcripts |> 
@@ -382,8 +381,7 @@ transcripts <-
       physical == "No" ~ FALSE,
       .default = NA),
     disability = intellectual + physical > 0) |> 
-  relocate(disability, .after = physical) |> 
-  select(-intellectual, -physical)
+  relocate(disability, .after = physical)
 
 
 
