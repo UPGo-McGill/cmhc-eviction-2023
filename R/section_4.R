@@ -21,6 +21,7 @@ t_bpl <- function(...) {
       pets = first(pets),
       income = first(income),
       disability = first(disability),
+      corporate = sum(code == "LT-C") >= 1,
       indifferent = sum(code == "BPL-I") >= 1,
       negative = sum(code == "BPL-N") >= 1,
       positive = sum(code == "BPL-P") >= 1,
@@ -45,6 +46,7 @@ t_bla <- function(...) {
       children = first(children),
       pets = first(pets),
       income = first(income),
+      corporate = sum(code == "LT-C") >= 1,
       disability = first(disability),
       absent = sum(code == "BLA-A") >= 1,
       control = sum(code == "BLA-C") >= 1,
@@ -154,6 +156,7 @@ t_bpl(children)
 t_bpl(pets)
 t_bpl(income)
 t_bpl(disability)
+t_bpl(corporate)
 
 # Broader landlord action
 t_bla()
@@ -166,6 +169,7 @@ t_bla(children)
 t_bla(pets)
 t_bla(income)
 t_bla(disability)
+t_bla(corporate)
 
 transcripts |> 
   summarize(
@@ -191,3 +195,37 @@ t_laf(pets)
 t_laf(income)
 t_laf(disability)
 
+# Landlord-factor evictions by landlord type and scale
+transcripts |> 
+  arrange(transcript) |> 
+  group_by(transcript) |> 
+  summarize(
+    individual = sum(code == "LT-I") >= 1,
+    corporate = sum(code == "LT-C") >= 1,
+    tenant = sum(code %in% c("ET-NP", "ET-OT")) >= 1,
+    landlord = sum(code %in% c(
+      "ET-OW", "ET-R", "ET-S", "ET-RT", "ET-OL")) >= 1,
+    multiple = sum(code == "ET-ME") >= 1) |>
+  filter(!tenant) |> 
+  group_by(multiple) |> 
+  summarize(
+    ind_n = sum(individual),
+    corp_n = sum(corporate)) |>  
+  mutate(
+    ind_pct = ind_n / sum(ind_n, corp_n),
+    corp_pct = corp_n / sum(ind_n, corp_n)) |> 
+  reframe(
+    multiple = c(multiple, NA),
+    ind_n = c(ind_n, sum(ind_n)),
+    corp_n = c(corp_n, sum(corp_n)),
+    ind_pct = c(ind_pct, sum(ind_pct)),
+    corp_pct = c(corp_pct, sum(corp_pct))) |> 
+  transmute(
+    multiple = c("Single-household eviction", "Multiple-household eviction", 
+                 "Totals"),
+    individual = paste0(ind_n, " (", scales::percent(ind_pct, 0.1), ")"),
+    corporate = paste0(corp_n, " (", scales::percent(corp_pct, 0.1), ")"),
+    total = paste0(ind_n + corp_n, " (", scales::percent(
+      ind_pct + corp_pct, 0.1), ")")) |> 
+  set_names(c(" ", "Individual landlord", "Corporate landlord", "Totals")) |> 
+  gt::gt()

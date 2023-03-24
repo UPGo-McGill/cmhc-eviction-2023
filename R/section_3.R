@@ -14,7 +14,9 @@ t_evict <- function(...) {
       reno = sum(code == "ET-R") > 0,
       sale = sum(code == "ET-S") > 0,
       retal = sum(code == "ET-RT") > 0,
-      other = sum(code == "ET-OL") > 0, .by = transcript) |> 
+      other = sum(code == "ET-OL") > 0, 
+      multiple = own_use + reno + sale > 1,
+      .by = transcript) |> 
     group_by(...) |> 
     summarize(across(c(own_use:other), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
