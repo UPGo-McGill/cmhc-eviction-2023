@@ -5,11 +5,12 @@ t_su <- function(...) {
     summarize(
       across(c(province, gender, race, children, pets, income, disability),
              first),
+      corporate = sum(code == "LT-C") >= 1,
       non_profit = sum(code == "Serv-HC") >= 1,
       legal_paid = sum(code == "Serv-L") >= 1,
       legal_free = sum(code == "Serv-F") >= 1,
       gov = sum(code == "Serv-G") >= 1,
-      any = non_profit + legal_paid + legal_free + gov > 0, .by = transcript) |> 
+      any = non_profit + legal_paid + legal_free + gov > 0, .by = id) |> 
     group_by(...) |> 
     summarize(across(c(non_profit:any), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
@@ -20,11 +21,12 @@ t_ss <- function(...) {
     summarize(
       across(c(province, gender, race, children, pets, income, disability),
              first),
+      corporate = sum(code == "LT-C") >= 1,
       family = sum(code == "SS-FM") >= 1,
       friends = sum(code == "SS-Fr") >= 1,
       social_media = sum(code == "SS-FM") >= 1,
       money = sum(code == "SS-M") >= 1,
-      any = family + friends + social_media + money > 0, .by = transcript) |> 
+      any = family + friends + social_media + money > 0, .by = id) |> 
     group_by(...) |> 
     summarize(across(c(family:any), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
@@ -43,6 +45,7 @@ t_su(children)
 t_su(pets)
 t_su(income)
 t_su(disability)
+t_su(corporate)
 
 # Figure 2
 figure_2 <- 
@@ -58,7 +61,7 @@ figure_2 <-
     legal_paid = sum(code == "Serv-L") >= 1,
     legal_free = sum(code == "Serv-F") >= 1,
     gov = sum(code == "Serv-G") >= 1,
-    any = non_profit + legal_paid + legal_free + gov > 0, .by = transcript) |> 
+    any = non_profit + legal_paid + legal_free + gov > 0, .by = id) |> 
   group_by(income) |> 
   summarize(across(c(non_profit:any), mean)) |> 
   filter(!is.na(income)) |> 
@@ -76,7 +79,8 @@ figure_2 <-
   facet_wrap(~name) +
   scale_y_continuous(name = "% of respondents", labels = scales::percent) +
   scale_x_discrete(name = "% of income used for rent") + 
-  theme_minimal()
+  theme_minimal() +
+  theme(text = element_text(family = "Futura"))
 
 ggsave("output/figure_2.png", figure_2, width = 7, height = 4, units = "in")
 
@@ -94,3 +98,4 @@ t_ss(pets)
 t_ss(income)
 t_ss(income == "50 - 100")
 t_ss(disability)
+t_ss(corporate)

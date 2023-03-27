@@ -16,7 +16,7 @@ t_evict <- function(...) {
       retal = sum(code == "ET-RT") > 0,
       other = sum(code == "ET-OL") > 0, 
       multiple = own_use + reno + sale > 1,
-      .by = transcript) |> 
+      .by = id) |> 
     group_by(...) |> 
     summarize(across(c(own_use:other), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
@@ -28,8 +28,8 @@ t_evict <- function(...) {
 # Landlord or tenant factor, single or multiple
 transcripts |> 
   filter(category == "ET") |> 
-  arrange(transcript) |> 
-  group_by(transcript) |> 
+  arrange(id) |> 
+  group_by(id) |> 
   summarize(
     tenant = sum(code %in% c("ET-NP", "ET-OT")) >= 1,
     landlord = sum(code %in% c(
@@ -80,8 +80,8 @@ t_evict(disability)
 # Single- or multiple-unit
 transcripts |> 
   filter(category == "ET") |> 
-  arrange(transcript) |> 
-  group_by(transcript) |> 
+  arrange(id) |> 
+  group_by(id) |> 
   summarize(
     own_use = sum(code == "ET-OW") >= 1,
     multiple = sum(code == "ET-ME") >= 1) |>
@@ -92,8 +92,8 @@ transcripts |>
 # Renovation and multiple-unit
 transcripts |> 
   filter(category == "ET") |> 
-  arrange(transcript) |> 
-  group_by(transcript) |> 
+  arrange(id) |> 
+  group_by(id) |> 
   summarize(
     reno = sum(code == "ET-R") >= 1,
     multiple = sum(code == "ET-ME") >= 1) |>
@@ -104,8 +104,8 @@ transcripts |>
 # Own-use and multiple-unit
 transcripts |> 
   filter(category == "ET") |> 
-  arrange(transcript) |> 
-  group_by(transcript) |> 
+  arrange(id) |> 
+  group_by(id) |> 
   summarize(
     own_use = sum(code == "ET-OW") >= 1,
     multiple = sum(code == "ET-ME") >= 1) |>

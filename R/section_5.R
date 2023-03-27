@@ -5,8 +5,9 @@ t_ci <- function(...) {
     summarize(
       across(c(province, gender, race, children, pets, income, disability),
              first),
+      corporate = sum(code == "LT-C") >= 1,
       court = sum(code == "ET-CI") >= 1,
-      non_court = sum(code == "ET-NC") >= 1, .by = transcript) |> 
+      non_court = sum(code == "ET-NC") >= 1, .by = id) |> 
     group_by(...) |> 
     summarize(across(c(court:non_court), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
@@ -17,35 +18,15 @@ t_la <- function(...) {
     summarize(
       across(c(province, gender, race, children, pets, income, disability),
              first),
+      corporate = sum(code == "LT-C") >= 1,
       court = sum(code == "LA-C") >= 1,
       settle = sum(code == "LA-S") >= 1,
       pess = sum(code == "LA-NoP") >= 1,
       capacity = sum(code == "LA-NoC") >= 1,
       external = sum(code == "LA-NoE") >= 1,
-      other = sum(code == "LA-NoO") >= 1, .by = transcript) |> 
+      other = sum(code == "LA-NoO") >= 1, .by = id) |> 
     group_by(...) |> 
     summarize(across(c(court:other), \(x) {
-      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
-}
-
-t_t <- function(...) {
-  transcripts |> 
-    summarize(
-      across(c(province, gender, race, children, pets, income, disability),
-             first),
-      shelter = sum(code == "T-S") >= 1,
-      trans = sum(code == "T-TH") >= 1,
-      short_term = sum(code == "T-ST") >= 1,
-      car = sum(code == "T-C") >= 1,
-      street = sum(code == "T-Street") >= 1,
-      friends = sum(code == "T-Fr") >= 1,
-      family = sum(code == "T-F") >= 1,
-      other = sum(code == "T-O") >= 1, 
-      homeless = sum(shelter + car + street + friends) >= 1,
-      any = sum(shelter + trans + short_term + car + street + friends + family +
-                  other) >= 1, .by = transcript) |> 
-    group_by(...) |> 
-    summarize(across(c(shelter:any), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
 }
 
@@ -54,6 +35,7 @@ t_cv <- function(...) {
     summarize(
       across(c(province, gender, race, children, pets, income, disability),
              first),
+      corporate = sum(code == "LT-C") >= 1,
       disability = first(disability),
       visits = sum(code == "CVD-V") >= 1,
       court = sum(code == "CVD-C") >= 1,
@@ -63,7 +45,7 @@ t_cv <- function(...) {
       positive = sum(code == "CVD-P") >= 1,
       other = sum(code == "CVD-V") >= 1,
       any_neg = sum(visits + court + new_apart + inc + health + other) >= 1, 
-      .by = transcript) |> 
+      .by = id) |> 
     group_by(...) |> 
     summarize(across(c(visits:any_neg), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
@@ -82,6 +64,7 @@ t_ci(children)
 t_ci(pets)
 t_ci(income)
 t_ci(disability)
+t_ci(corporate)
 
 transcripts |> 
   summarize(
@@ -91,7 +74,7 @@ transcripts |>
     reno = sum(code == "ET-R") > 0,
     sale = sum(code == "ET-S") > 0,
     retal = sum(code == "ET-RT") > 0,
-    other = sum(code == "ET-OL") > 0, .by = transcript) |> 
+    other = sum(code == "ET-OL") > 0, .by = id) |> 
   group_by(court) |> 
   summarize(across(c(own_use:other), \(x) {
     paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
@@ -109,10 +92,12 @@ t_la(children)
 t_la(pets)
 t_la(income)
 t_la(disability)
+t_la(corporate)
+t_la(province, corporate)
 
 transcripts |> 
   filter(category == "LA") |> 
-  group_by(transcript) |> 
+  group_by(id) |> 
   count(code) |> 
   ungroup() |> 
   count(code) |> 
@@ -124,20 +109,6 @@ transcripts |>
 transcripts |> 
   filter(code == "LA-S") |> 
   count(province)
-
-
-# Transition to stable housing --------------------------------------------
-
-t_t()
-t_t(province)
-t_t(gender)
-t_t(race)
-t_t(race == "white")
-t_t(gender, race == "white")
-t_t(children)
-t_t(pets)
-t_t(income)
-t_t(disability)
 
 
 # Covid -------------------------------------------------------------------
@@ -152,3 +123,4 @@ t_cv(children)
 t_cv(pets)
 t_cv(income)
 t_cv(disability)
+t_cv(corporate)

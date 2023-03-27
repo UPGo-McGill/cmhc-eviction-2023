@@ -76,7 +76,7 @@ get_census("CA21", regions = list(C = 01), level = "PR", vectors = c(
 
 # Province
 snippets |> 
-  group_by(transcript) |> 
+  group_by(id) |> 
   slice(1) |> 
   ungroup() |> 
   count(province) |> 
@@ -87,7 +87,7 @@ snippets |>
 
 # Age
 snippets |> 
-  group_by(transcript) |> 
+  group_by(id) |> 
   slice(1) |> 
   ungroup() |> 
   summarize(
@@ -103,7 +103,7 @@ snippets |>
 
 # HH size
 snippets |> 
-  group_by(transcript) |> 
+  group_by(id) |> 
   slice(1) |> 
   ungroup() |> 
   summarize(
@@ -119,7 +119,7 @@ snippets |>
 
 # Gender
 snippets |> 
-  group_by(transcript) |> 
+  group_by(id) |> 
   slice(1) |> 
   ungroup() |> 
   summarize(
@@ -135,7 +135,7 @@ snippets |>
 
 # Race/ethnicity
 snippets |> 
-  group_by(transcript) |> 
+  group_by(id) |> 
   slice(1) |> 
   ungroup() |> 
   count(race) |> 
@@ -146,7 +146,7 @@ snippets |>
 
 # Disability
 snippets |> 
-  group_by(transcript) |> 
+  group_by(id) |> 
   slice(1) |> 
   ungroup() |>
   summarize(

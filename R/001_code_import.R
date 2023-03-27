@@ -151,6 +151,13 @@ transcripts <-
   select(-old_children)
 
 
+# Additional tweaks -------------------------------------------------------
+
+transcripts <- 
+  transcripts |> 
+  mutate(lone_parent = if_else(lone_parent == "Yes", TRUE, FALSE))
+
+
 # Clean up ----------------------------------------------------------------
 
 rm(code_paths, crosstab_paths, descriptor_paths, old_children, 

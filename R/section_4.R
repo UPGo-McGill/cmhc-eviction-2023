@@ -1,15 +1,19 @@
 #### 4. THE LANDLORD ###########################################################
 
-t_lt <- 
+t_lt <- function(...) {
   transcripts |> 
-  filter(category == "LT") |> 
-  group_by(transcript) |>
-  summarize(
-    individual = sum(code == "LT-I") >= 1,
-    corporate = sum(code == "LT-C") >= 1,
-    public = sum(code == "LT-PH") >= 1,
-    non_profit = sum(code == "LT-NP") >= 1,
-    owned_other = sum(code == "LT-RP") >= 1)
+    summarize(
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
+      individual = sum(code == "LT-I") >= 1,
+      corporate = sum(code == "LT-C") >= 1,
+      public = sum(code == "LT-PH") >= 1,
+      non_profit = sum(code == "LT-NP") >= 1,
+      owned_other = sum(code == "LT-RP") >= 1, .by = id) |> 
+    group_by(...) |> 
+    summarize(across(c(individual:owned_other), \(x) {
+      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
+}
 
 t_bpl <- function(...) {
   transcripts |> 
@@ -31,7 +35,7 @@ t_bpl <- function(...) {
         sum(code %in% c("BPL-I", "BPL-P")) == 0,
       pos_only = sum(code == "BPL-P") >= 1 & 
         sum(code %in% c("BPL-N", "BPL-I")) == 0,
-      mix = indif_only + neg_only + pos_only == 0, .by = transcript) |> 
+      mix = indif_only + neg_only + pos_only == 0, .by = id) |> 
     group_by(...) |> 
     summarize(across(c(indifferent:mix), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
@@ -54,7 +58,7 @@ t_bla <- function(...) {
       harass = sum(code == "BLA-H") >= 1,
       neutral = sum(code == "BLA-N") >= 1, 
       neg = absent + control + disresp + harass >= 1,
-      .by = transcript) |> 
+      .by = id) |> 
     group_by(...) |> 
     summarize(across(c(absent:neg), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
@@ -75,7 +79,7 @@ t_laf <- function(...) {
       ghost = sum(code == "LAF-G") >= 1,
       labour = sum(code == "LAF-TL") >= 1,
       neutral = sum(code == "LAF-N") >= 1,
-      any = harass + illegal + ghost + labour >= 1, .by = transcript) |> 
+      any = harass + illegal + ghost + labour >= 1, .by = id) |> 
     group_by(...) |> 
     summarize(across(c(harass:any), \(x) {
       paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
@@ -84,8 +88,27 @@ t_laf <- function(...) {
   
 # Landlord type -----------------------------------------------------------
 
+t_lt()
+t_lt(province)
+t_lt(gender)
+t_lt(race)
+t_lt(race == "white")
+t_lt(gender, race == "white")
+t_lt(children)
+t_lt(pets)
+t_lt(income)
+t_lt(disability)
+
 # Landlord type
-t_lt |> 
+transcripts |> 
+  filter(category == "LT") |> 
+  summarize(
+    individual = sum(code == "LT-I") >= 1,
+    corporate = sum(code == "LT-C") >= 1,
+    public = sum(code == "LT-PH") >= 1,
+    non_profit = sum(code == "LT-NP") >= 1,
+    owned_other = sum(code == "LT-RP") >= 1,
+    .by = id) |> 
   summarize(across(c(individual:non_profit), sum), .by = owned_other) |> 
   mutate(across(individual:non_profit, \(x) 
                 x / sum(individual, corporate, public, non_profit), 
@@ -109,10 +132,9 @@ t_lt |>
     ) |> 
   gt::gt()
 
-
 # Landlord type vs. eviction type
 transcripts |> 
-  group_by(transcript) |> 
+  group_by(id) |> 
   summarize(
     individual = sum(code == "LT-I") >= 1,
     corporate = sum(code == "LT-C") >= 1,
@@ -130,7 +152,7 @@ transcripts |>
 
 # Landlord type vs. eviction scale
 transcripts |> 
-  group_by(transcript) |> 
+  group_by(id) |> 
   summarize(
     individual = sum(code == "LT-I") >= 1,
     corporate = sum(code == "LT-C") >= 1,
@@ -178,7 +200,7 @@ transcripts |>
     control = sum(code == "BLA-C") >= 1,
     disresp = sum(code == "BLA-D") >= 1,
     harass = sum(code == "BLA-H") >= 1,
-    neutral = sum(code == "BLA-N") >= 1, .by = transcript) |> 
+    neutral = sum(code == "BLA-N") >= 1, .by = id) |> 
   group_by(nb = province == "New Brunswick") |> 
   summarize(neg = sum(absent + control + disresp + harass + neutral > 0),
             pct = mean(absent + control + disresp + harass + neutral > 0))
@@ -197,8 +219,8 @@ t_laf(disability)
 
 # Landlord-factor evictions by landlord type and scale
 transcripts |> 
-  arrange(transcript) |> 
-  group_by(transcript) |> 
+  arrange(id) |> 
+  group_by(id) |> 
   summarize(
     individual = sum(code == "LT-I") >= 1,
     corporate = sum(code == "LT-C") >= 1,
