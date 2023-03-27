@@ -113,10 +113,12 @@ snippets <-
   select(-transcript) |> 
   arrange(id)
 
+rm(ids)
 
 
 # Helper functions for querying IDs and quotes ----------------------------
 
+# Get info on an ID
 info <- function(x) {
   
   transcripts |> 
@@ -134,10 +136,20 @@ info <- function(x) {
   
 }
 
-snip <- function(x) {
+# Get snippets by text contents
+snip_text <- function(x) {
   
   snippets |> 
     filter(str_detect(snippet, x)) |> 
     select(id, snippet)
+  
+}
+
+# Get snippets by code and other filters
+snip_code <- function(code, ...) {
+  
+  snippets |> 
+    filter(map_lgl(codes, \(x) sum(x == code) > 0)) |> 
+    filter(...)
   
 }

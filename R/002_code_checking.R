@@ -280,7 +280,7 @@ stopifnot({
 snippets <-
   snippets |> 
   mutate(race = case_when(
-    indigenous == "Yes" | str_detect(race, "Indigenous") ~ "indigenous",
+    indigenous | str_detect(race, "Indigenous") ~ "indigenous",
     race %in% c("Asian", "Biracial (Indian and Canadian)",
                 "European, Chinese, Japanese") ~ "asian",
     race %in% c("Black", "Caribbean", "Haitian", "Nigerian", 
@@ -296,7 +296,7 @@ snippets <-
 transcripts <- 
   transcripts |> 
   mutate(race = case_when(
-    indigenous == "Yes" | str_detect(race, "Indigenous") ~ "indigenous",
+    indigenous | str_detect(race, "Indigenous") ~ "indigenous",
     race %in% c("Asian", "Biracial (Indian and Canadian)",
                 "European, Chinese, Japanese") ~ "asian",
     race %in% c("Black", "Caribbean", "Haitian", "Nigerian", 

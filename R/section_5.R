@@ -1,126 +1,68 @@
-#### 5. THE EVICTION PROCESS ###################################################
+#### 10. PREVIOUS EXPERIENCES ##################################################
 
-t_ci <- function(...) {
+t_bhe <- function(...) {
   transcripts |> 
     summarize(
       across(c(province, gender, race, children, pets, income, disability),
              first),
-      corporate = sum(code == "LT-C") >= 1,
-      court = sum(code == "ET-CI") >= 1,
-      non_court = sum(code == "ET-NC") >= 1, .by = id) |> 
-    group_by(...) |> 
-    summarize(across(c(court:non_court), \(x) {
-      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
-}
-
-t_la <- function(...) {
-  transcripts |> 
-    summarize(
-      across(c(province, gender, race, children, pets, income, disability),
-             first),
-      corporate = sum(code == "LT-C") >= 1,
-      court = sum(code == "LA-C") >= 1,
-      settle = sum(code == "LA-S") >= 1,
-      pess = sum(code == "LA-NoP") >= 1,
-      capacity = sum(code == "LA-NoC") >= 1,
-      external = sum(code == "LA-NoE") >= 1,
-      other = sum(code == "LA-NoO") >= 1, .by = id) |> 
-    group_by(...) |> 
-    summarize(across(c(court:other), \(x) {
-      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
-}
-
-t_cv <- function(...) {
-  transcripts |> 
-    summarize(
-      across(c(province, gender, race, children, pets, income, disability),
-             first),
-      corporate = sum(code == "LT-C") >= 1,
-      disability = first(disability),
-      visits = sum(code == "CVD-V") >= 1,
-      court = sum(code == "CVD-C") >= 1,
-      new_apart = sum(code == "CVD-N") >= 1,
-      inc = sum(code == "CVD-I") >= 1,
-      health = sum(code == "CVD-H") >= 1,
-      positive = sum(code == "CVD-P") >= 1,
-      other = sum(code == "CVD-V") >= 1,
-      any_neg = sum(visits + court + new_apart + inc + health + other) >= 1, 
+      eviction = sum(code == "BHE-FM") >= 1,
+      instability = sum(code == "BHE-HI") >= 1,
+      discrimination = sum(code == "BHE-D") >= 1,
+      any = eviction + instability + discrimination >= 1,
       .by = id) |> 
     group_by(...) |> 
-    summarize(across(c(visits:any_neg), \(x) {
-      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
+    summarize(across(c(eviction:any), \(x) {
+      paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}),
+      .groups = "drop")
+}
+
+t_out <- function(...) {
+  transcripts |> 
+    summarize(
+      across(c(province, gender, race, children, pets, income, disability),
+             first),
+      eviction = sum(code == "BHE-FM") >= 1,
+      instability = sum(code == "BHE-HI") >= 1,
+      discrimination = sum(code == "BHE-D") >= 1,
+      cost_up = sum(code == "UD-C+") >= 1,
+      cost_equal = sum(code == "UD-C=") >= 1,
+      cost_down = sum(code == "UD-C-") >= 1,
+      qual_up = sum(code == "UD-Q+") >= 1,
+      qual_equal = sum(code == "UD-Q=") >= 1,
+      qual_down = sum(code == "UD-Q-") >= 1,
+      size_up = sum(code == "UD-S+") >= 1,
+      size_equal = sum(code == "UD-S=") >= 1,
+      size_down = sum(code == "UD-S-") >= 1,
+      loc_up = sum(code == "UD-L+") >= 1,
+      loc_equal = sum(code == "UD-L=") >= 1,
+      loc_down = sum(code == "UD-L-") >= 1,
+      tot_up = cost_down + qual_up + size_up + loc_up,
+      tot_equal = cost_equal + qual_equal + size_equal + loc_equal,
+      tot_down = cost_up + qual_down + size_down + loc_down,
+      balance = tot_up - tot_down, 
+      .by = id) |> 
+    group_by(...) |> 
+    summarize(balance = mean(balance), n = n())
 }
 
 
-# Court involvement -------------------------------------------------------
+# Instability -------------------------------------------------------------
 
-t_ci()
-t_ci(province)
-t_ci(gender)
-t_ci(race)
-t_ci(race == "white")
-t_ci(gender, race == "white")
-t_ci(children)
-t_ci(pets)
-t_ci(income)
-t_ci(disability)
-t_ci(corporate)
+t_bhe()
+t_bhe(province)
+t_bhe(gender)
+t_bhe(race)
+t_bhe(white = race == "white")
+t_bhe(indig = race == "indigenous")
+t_bhe(male = gender == "Male", white = race == "white")
+t_bhe(non_white_male = gender == "Male" & race != "white")
+t_bhe(children)
+t_bhe(pets)
+t_bhe(income)
+t_bhe(high_stress = income == "50 - 100")
+t_bhe(disability)
 
-transcripts |> 
-  summarize(
-    province = first(province),
-    court = sum(code == "ET-CI") >= 1,
-    own_use = sum(code == "ET-OW") > 0,
-    reno = sum(code == "ET-R") > 0,
-    sale = sum(code == "ET-S") > 0,
-    retal = sum(code == "ET-RT") > 0,
-    other = sum(code == "ET-OL") > 0, .by = id) |> 
-  group_by(court) |> 
-  summarize(across(c(own_use:other), \(x) {
-    paste0(sum(x), " (", scales::percent(mean(x), 0.1), ")")}))
-
-
-# Negotiated settlements --------------------------------------------------
-
-t_la()
-t_la(province)
-t_la(gender)
-t_la(race)
-t_la(race == "white")
-t_la(gender, race == "white")
-t_la(children)
-t_la(pets)
-t_la(income)
-t_la(disability)
-t_la(corporate)
-t_la(province, corporate)
-
-transcripts |> 
-  filter(category == "LA") |> 
-  group_by(id) |> 
-  count(code) |> 
-  ungroup() |> 
-  count(code) |> 
-  mutate(pct_total = n / sum(n)) |> 
-  group_by(no = str_detect(code, "-No")) |> 
-  mutate(pct_group = n / sum(n)) |> 
-  ungroup()
-
-transcripts |> 
-  filter(code == "LA-S") |> 
-  count(province)
-
-
-# Covid -------------------------------------------------------------------
-
-t_cv()
-t_cv(province)
-t_cv(gender)
-t_cv(race)
-t_cv(race == "white")
-t_cv(gender, race == "white")
-t_cv(children)
-t_cv(pets)
-t_cv(income)
-t_cv(disability)
-t_cv(corporate)
+t_out(eviction)
+t_out(instability)
+t_out(discrimination)
+t_out(any = eviction + instability + discrimination > 0)

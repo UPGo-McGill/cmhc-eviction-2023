@@ -109,12 +109,13 @@ snippets <-
                col_types = paste0(paste(rep("c", 16), collapse = ""), "dd", 
                                   paste(rep("c", snippet_cols - length(
                                     snippet_base_col_names)), collapse = "")),
-               show_col_types = FALSE) |> 
-      mutate(codes = list(
-        all_of(paste0("code_", seq_len(
-          snippet_cols - length(snippet_base_col_names)))))) |> 
-      select(all_of(c(snippet_base_col_names, "codes")))}) |> 
+               show_col_types = FALSE)}) |> 
   bind_rows() |> 
+  rowwise() |> 
+  mutate(codes = list(c(code_1, code_2, code_3))) |> 
+  mutate(codes = list(codes[!is.na(codes)])) |> 
+  ungroup() |> 
+  select(all_of(c(snippet_base_col_names, "codes"))) |> 
   select(-memo)
 
 
@@ -155,7 +156,17 @@ transcripts <-
 
 transcripts <- 
   transcripts |> 
-  mutate(lone_parent = if_else(lone_parent == "Yes", TRUE, FALSE))
+  mutate(lone_parent = if_else(lone_parent == "Yes", TRUE, FALSE),
+         indigenous = case_when(indigenous == "No" ~ FALSE,
+                                indigenous == "Yes" ~ TRUE,
+                                .default = NA))
+
+snippets <- 
+  snippets |> 
+  mutate(lone_parent = if_else(lone_parent == "Yes", TRUE, FALSE),
+         indigenous = case_when(indigenous == "No" ~ FALSE,
+                                indigenous == "Yes" ~ TRUE,
+                                .default = NA))
 
 
 # Clean up ----------------------------------------------------------------
