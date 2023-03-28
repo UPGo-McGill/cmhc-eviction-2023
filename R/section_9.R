@@ -365,7 +365,7 @@ figure_3_1 <-
     balance = tot_up - tot_down, .by = id) |>
   ggplot(aes(balance)) +
   geom_bar() +
-  scale_x_continuous(name = "Net housing outcome after eviction",
+  scale_x_continuous(name = "Net housing outcome",
                      breaks = -4:4, minor_breaks = NULL) +
   scale_y_continuous(name = "Observations") +
   theme_minimal() +
@@ -396,7 +396,7 @@ figure_3_2 <-
   geom_violin() +
   geom_jitter(width = 0.1, height = 0.1) +
   scale_x_discrete(name = "Province") +
-  scale_y_continuous(name = "Net housing outcome after eviction",
+  scale_y_continuous(name = "Net housing outcome",
                      breaks = 2 * -2:2) +
   theme_minimal() +
   theme(text = element_text(family = "Futura"))
@@ -430,7 +430,7 @@ figure_3_3 <-
   geom_violin() +
   geom_jitter(width = 0.1, height = 0.1) +
   scale_x_discrete(name = "Cost of post-eviction housing") +
-  scale_y_continuous(name = "Net housing outcome after eviction") +
+  scale_y_continuous(name = "Net housing outcome") +
   theme_minimal() +
   theme(text = element_text(family = "Futura"))
 
@@ -494,7 +494,7 @@ figure_3_4 <-
   geom_violin() +
   geom_jitter(width = 0.1, height = 0.1) +
   scale_x_discrete(name = "Post-eviction tenure type") +
-  scale_y_continuous(name = "Net housing outcome after eviction",
+  scale_y_continuous(name = "Net housing outcome",
                      breaks = 2 * -2:2) +
   theme_minimal() +
   theme(text = element_text(family = "Futura"))
@@ -553,7 +553,7 @@ figure_3_5 <-
   geom_violin() +
   geom_jitter(width = 0.1, height = 0.1) +
   scale_x_discrete(name = "Gender") +
-  scale_y_continuous(name = "Net housing outcome after eviction",
+  scale_y_continuous(name = "Net housing outcome",
                      breaks = 2 * -2:2) +
   theme_minimal() +
   theme(text = element_text(family = "Futura"))
@@ -610,7 +610,7 @@ figure_3_6 <-
   geom_violin() +
   geom_jitter(width = 0.1, height = 0.1) +
   scale_x_discrete(name = "Race") +
-  scale_y_continuous(name = "Net housing outcome after eviction",
+  scale_y_continuous(name = "Net housing outcome",
                      breaks = 2 * -2:2) +
   theme_minimal() +
   theme(text = element_text(family = "Futura"))
@@ -638,11 +638,79 @@ transcripts |>
   filter(!is.na(white)) |> 
   summarize(balance = mean(balance), .by = white)
 
+# Instability faceting figure
+figure_3_7 <- 
+  transcripts |> 
+  summarize(
+    cost_up = sum(code == "UD-C+") >= 1,
+    cost_equal = sum(code == "UD-C=") >= 1,
+    cost_down = sum(code == "UD-C-") >= 1,
+    qual_up = sum(code == "UD-Q+") >= 1,
+    qual_equal = sum(code == "UD-Q=") >= 1,
+    qual_down = sum(code == "UD-Q-") >= 1,
+    size_up = sum(code == "UD-S+") >= 1,
+    size_equal = sum(code == "UD-S=") >= 1,
+    size_down = sum(code == "UD-S-") >= 1,
+    loc_up = sum(code == "UD-L+") >= 1,
+    loc_equal = sum(code == "UD-L=") >= 1,
+    loc_down = sum(code == "UD-L-") >= 1,
+    province = first(province), 
+    eviction = sum(code == "BHE-FM") >= 1,
+    instability = sum(code == "BHE-HI") >= 1,
+    discrimination = sum(code == "BHE-D") >= 1,
+    any = eviction + instability + discrimination >= 1,
+    tot_up = cost_down + qual_up + size_up + loc_up,
+    tot_equal = qual_equal + size_equal + loc_equal,
+    tot_down = cost_up + qual_down + size_down + loc_down,
+    balance = tot_up - tot_down, .by = id) |> 
+  ggplot(aes(any, balance)) +
+  geom_violin() +
+  geom_jitter(width = 0.1, height = 0.1) +
+  scale_x_discrete(name = "Previous housing instability") +
+  scale_y_continuous(name = "Net housing outcome",
+                     breaks = 2 * -2:2) +
+  theme_minimal() +
+  theme(text = element_text(family = "Futura"))
+
+# Instability faceting table
+transcripts |> 
+  summarize(
+    cost_up = sum(code == "UD-C+") >= 1,
+    cost_equal = sum(code == "UD-C=") >= 1,
+    cost_down = sum(code == "UD-C-") >= 1,
+    qual_up = sum(code == "UD-Q+") >= 1,
+    qual_equal = sum(code == "UD-Q=") >= 1,
+    qual_down = sum(code == "UD-Q-") >= 1,
+    size_up = sum(code == "UD-S+") >= 1,
+    size_equal = sum(code == "UD-S=") >= 1,
+    size_down = sum(code == "UD-S-") >= 1,
+    loc_up = sum(code == "UD-L+") >= 1,
+    loc_equal = sum(code == "UD-L=") >= 1,
+    loc_down = sum(code == "UD-L-") >= 1,
+    white = first(race) == "white", 
+    eviction = sum(code == "BHE-FM") >= 1,
+    instability = sum(code == "BHE-HI") >= 1,
+    discrimination = sum(code == "BHE-D") >= 1,
+    any = eviction + instability + discrimination >= 1,
+    tot_up = cost_down + qual_up + size_up + loc_up,
+    tot_equal = qual_equal + size_equal + loc_equal,
+    tot_down = cost_up + qual_down + size_down + loc_down,
+    balance = tot_up - tot_down, .by = id) |> 
+  summarize(balance = mean(balance), .by = any)
+
 # Combined figure
 library(patchwork)
 
+layout <- "
+AA
+BC
+DE
+FG
+"
+
 figure_3 <- 
   figure_3_1 + figure_3_2 + figure_3_3 + figure_3_4 + figure_3_5 + figure_3_6 + 
-  plot_annotation(tag_levels = "A") + plot_layout(ncol = 2)
+  figure_3_7 +
+  plot_annotation(tag_levels = "A") + plot_layout(design = layout)
 
-ggsave("output/figure_3.png", figure_3, width = 9, height = 10, units = "in")
+ggsave("output/figure_3.png", figure_3, width = 9, height = 11, units = "in")

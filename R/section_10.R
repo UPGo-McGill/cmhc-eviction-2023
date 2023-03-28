@@ -158,7 +158,7 @@ figure_4 <-
   theme_minimal() +
   theme(legend.position = "bottom", text = element_text(family = "Futura"))
 
-ggsave("output/figure_4.png", figure_4, width = 7, height = 4, units = "in")
+ggsave("output/figure_4.png", figure_4, width = 7, height = 3.6, units = "in")
 
 # Loss of social life
 transcripts |> 
