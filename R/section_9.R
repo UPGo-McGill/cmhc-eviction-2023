@@ -584,7 +584,7 @@ transcripts |>
   group_by(gender) |> 
   summarize(balance = mean(balance))
 
-# Income faceting figure
+# Race faceting figure
 figure_3_6 <- 
   transcripts |> 
   summarize(
@@ -606,6 +606,8 @@ figure_3_6 <-
     tot_down = cost_up + qual_down + size_down + loc_down,
     balance = tot_up - tot_down, .by = id) |> 
   filter(!is.na(white)) |> 
+  mutate(white = if_else(white == "White", "White", 
+                         "Racialized or Indigenous")) |> 
   ggplot(aes(white, balance)) +
   geom_violin() +
   geom_jitter(width = 0.1, height = 0.1) +
@@ -663,6 +665,7 @@ figure_3_7 <-
     tot_equal = qual_equal + size_equal + loc_equal,
     tot_down = cost_up + qual_down + size_down + loc_down,
     balance = tot_up - tot_down, .by = id) |> 
+  mutate(any = if_else(any, "True", "False")) |> 
   ggplot(aes(any, balance)) +
   geom_violin() +
   geom_jitter(width = 0.1, height = 0.1) +
